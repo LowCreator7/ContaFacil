@@ -1,0 +1,167 @@
+<!-- Exemplo para compras.html com melhorias visuais e localStorage -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Compras</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f9f9f9;
+      padding: 40px;
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    form {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 30px;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .btn {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .editar {
+      background: gold;
+    }
+    .excluir {
+      background: crimson;
+      color: white;
+    }
+    .voltar {
+      display: block;
+      margin: 20px auto;
+      text-align: center;
+      text-decoration: none;
+      background: #2196F3;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Registro de Compras</h2>
+
+  <form id="formCompras">
+    <input type="date" id="data" required>
+    <input type="text" id="produto" placeholder="Produto" required>
+    <input type="number" id="quantidade" placeholder="Quantidade" required>
+    <input type="number" id="valorCompra" placeholder="Valor Unitário" required>
+    <button type="submit">Salvar</button>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Produto</th>
+        <th>Quantidade</th>
+        <th>Valor Unit.</th>
+        <th>Total</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="tabelaCompras"></tbody>
+  </table>
+
+  <a class="voltar" href="dashboard.html">Voltar ao Dashboard</a>
+
+  <script>
+    const form = document.getElementById('formCompras');
+    const tabela = document.getElementById('tabelaCompras');
+
+    let compras = JSON.parse(localStorage.getItem("compras")) || [];
+    let editando = null;
+
+    function renderizar() {
+      tabela.innerHTML = '';
+      compras.forEach((c, i) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${c.data}</td>
+          <td>${c.produto}</td>
+          <td>${c.quantidade}</td>
+          <td>R$ ${c.valor.toFixed(2)}</td>
+          <td>R$ ${(c.valor * c.quantidade).toFixed(2)}</td>
+          <td>
+            <button class="btn editar" onclick="editar(${i})">Editar</button>
+            <button class="btn excluir" onclick="excluir(${i})">Excluir</button>
+          </td>
+        `;
+        tabela.appendChild(row);
+      });
+
+      localStorage.setItem("compras", JSON.stringify(compras));
+    }
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const data = document.getElementById('data').value;
+      const produto = document.getElementById('produto').value;
+      const quantidade = parseInt(document.getElementById('quantidade').value);
+      const valor = parseFloat(document.getElementById('valorCompra').value);
+      const compra = { data, produto, quantidade, valor };
+
+      if (editando !== null) {
+        compras[editando] = compra;
+        editando = null;
+      } else {
+        compras.push(compra);
+      }
+
+      form.reset();
+      renderizar();
+    });
+
+    window.editar = i => {
+      const c = compras[i];
+      document.getElementById('data').value = c.data;
+      document.getElementById('produto').value = c.produto;
+      document.getElementById('quantidade').value = c.quantidade;
+      document.getElementById('valorCompra').value = c.valor;
+      editando = i;
+    };
+
+    window.excluir = i => {
+      compras.splice(i, 1);
+      renderizar();
+    };
+
+    renderizar();
+  </script>
+</body>
+</html>

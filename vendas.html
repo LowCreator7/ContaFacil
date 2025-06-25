@@ -1,0 +1,183 @@
+<!-- Tela de Vendas com design bonito, botão de voltar e localStorage -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Vendas</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f0f0;
+      padding: 40px;
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    form {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 30px;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      background: #007BFF;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0069d9;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .btn {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .editar {
+      background: orange;
+    }
+    .excluir {
+      background: red;
+      color: white;
+    }
+    .voltar {
+      display: block;
+      margin: 20px auto;
+      text-align: center;
+      text-decoration: none;
+      background: #2196F3;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Registro de Vendas</h2>
+
+  <form id="formVendas">
+    <input type="date" id="dataVenda" required>
+    <input type="text" id="produtoVenda" placeholder="Produto" required>
+    <input type="number" id="quantidadeVenda" placeholder="Quantidade" required>
+    <input type="number" id="valorVenda" placeholder="Valor Unitário" required>
+    <button type="submit">Salvar</button>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Produto</th>
+        <th>Quantidade</th>
+        <th>Valor Unit.</th>
+        <th>Total</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="tabelaVendas"></tbody>
+  </table>
+
+  <a class="voltar" href="dashboard.html">Voltar ao Dashboard</a>
+
+  <script>
+    const formVenda = document.getElementById('formVendas');
+    const tabelaVendas = document.getElementById('tabelaVendas');
+
+    let vendas = [];
+    if (localStorage.getItem("vendas")) {
+      try {
+        vendas = JSON.parse(localStorage.getItem("vendas"));
+      } catch (e) {
+        console.error("Erro ao carregar vendas do localStorage", e);
+        vendas = [];
+      }
+    }
+    let editandoVenda = null;
+
+    function renderizarVendas() {
+      tabelaVendas.innerHTML = '';
+      vendas.forEach((v, i) => {
+        const row = document.createElement('tr');
+        const valor = parseFloat(v.valor) || 0;
+        const quantidade = parseInt(v.quantidade) || 0;
+        row.innerHTML = `
+          <td>${v.data}</td>
+          <td>${v.produto}</td>
+          <td>${quantidade}</td>
+          <td>R$ ${valor.toFixed(2)}</td>
+          <td>R$ ${(valor * quantidade).toFixed(2)}</td>
+          <td>
+            <button class="btn editar" onclick="editarVenda(${i})">Editar</button>
+            <button class="btn excluir" onclick="excluirVenda(${i})">Excluir</button>
+          </td>
+        `;
+        tabelaVendas.appendChild(row);
+      });
+      localStorage.setItem("vendas", JSON.stringify(vendas));
+    }
+
+    formVenda.addEventListener('submit', e => {
+      e.preventDefault();
+      const data = document.getElementById('dataVenda').value;
+      const produto = document.getElementById('produtoVenda').value;
+      const quantidade = parseInt(document.getElementById('quantidadeVenda').value);
+      const valor = parseFloat(document.getElementById('valorVenda').value);
+
+      if (isNaN(quantidade) || isNaN(valor)) {
+        alert("Preencha todos os campos corretamente.");
+        return;
+      }
+
+      const venda = { data, produto, quantidade, valor };
+
+      if (editandoVenda !== null) {
+        vendas[editandoVenda] = venda;
+        editandoVenda = null;
+      } else {
+        vendas.push(venda);
+      }
+
+      renderizarVendas();
+      localStorage.setItem("vendas", JSON.stringify(vendas));
+      formVenda.reset();
+    });
+
+    window.editarVenda = i => {
+      const v = vendas[i];
+      document.getElementById('dataVenda').value = v.data;
+      document.getElementById('produtoVenda').value = v.produto;
+      document.getElementById('quantidadeVenda').value = v.quantidade;
+      document.getElementById('valorVenda').value = v.valor;
+      editandoVenda = i;
+    };
+
+    window.excluirVenda = i => {
+      vendas.splice(i, 1);
+      renderizarVendas();
+    };
+
+    renderizarVendas();
+  </script>
+</body>
+</html>
