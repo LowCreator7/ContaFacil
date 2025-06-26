@@ -1,50 +1,86 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #e0e0e0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 40px;
+      background: linear-gradient(135deg, #e0f7fa, #ffffff);
+      margin: 0;
+      padding: 20px;
+      animation: fadeIn 0.6s ease-in;
     }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
     h1 {
+      color: #2c3e50;
+      text-align: center;
       margin-bottom: 30px;
-      color: #333;
+      font-size: 5vw; /* se adapta ao tamanho da tela */
     }
+
     .container {
       display: flex;
-      gap: 20px;
       flex-wrap: wrap;
       justify-content: center;
+      gap: 20px;
     }
+
     .card {
       background: white;
       border-radius: 10px;
-      padding: 30px;
-      width: 250px;
+      padding: 20px;
+      width: 100%;
+      max-width: 250px;
       text-align: center;
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
       text-decoration: none;
       color: #333;
-      font-size: 18px;
+      font-size: 4.5vw;
       transition: transform 0.2s ease;
     }
+
     .card:hover {
       transform: scale(1.05);
+    }
+
+    /* Responsividade com media queries */
+    @media (min-width: 600px) {
+      .card {
+        font-size: 18px;
+      }
+
+      h1 {
+        font-size: 32px;
+      }
+    }
+
+    @media (min-width: 768px) {
+      body {
+        padding: 40px;
+      }
+
+      .card {
+        width: 200px;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>Dashboard Financeiro</h1>
+  <h1>Financeiro</h1>
   <div class="container">
     <a class="card" href="compras.html">Compras</a>
     <a class="card" href="vendas.html">Vendas</a>
     <a class="card" href="resumo.html">Resumo Financeiro</a>
+    <a class="card" href="clientes.html">Clientes</a>
+    <a class="card" href="fornecedores.html">Fornecedores</a>
+    <a class="card" href="estoque.html">Estoque</a>
   </div>
 </body>
 </html>
