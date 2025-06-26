@@ -7,12 +7,22 @@
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #f0f0f0;
-      padding: 40px;
+      background: linear-gradient(135deg, #e0f7fa, #ffffff);
+      margin: 0;
+      padding: 20px;
+      animation: fadeIn 0.6s ease-in;
     }
-    h2 {
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    h1 {
+      color: #2c3e50;
       text-align: center;
-      color: #333;
+      margin-bottom: 30px;
+      font-size: 5vw; /* se adapta ao tamanho da tela */
     }
     form {
       display: flex;
@@ -38,16 +48,42 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      background: white;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
     th, td {
-      border: 1px solid #ddd;
-      padding: 10px;
+      padding: 14px 12px;
       text-align: center;
+      border-bottom: 1px solid #eee;
+      font-size: 15px;
     }
     th {
-      background-color: #f2f2f2;
+      background: #00acc1;
+      color: white;
+      font-weight: 600;
+      font-size: 16px;
     }
+
+    tr:hover {
+      background: #f1f1f1;
+    }
+    /* Responsividade com media queries */
+    @media (min-width: 600px) {
+      .card {
+        font-size: 18px;
+      }
+
+      h1 {
+        font-size: 32px;
+      }
+    }
+
+    @media (min-width: 768px) {
+      body {
+        padding: 40px;
+      }
     .btn {
       padding: 5px 10px;
       border: none;
@@ -62,14 +98,15 @@
       color: white;
     }
     .voltar {
-      display: block;
-      margin: 20px auto;
-      text-align: center;
+      display: inline-block;
+      margin-top: 30px;
       text-decoration: none;
-      background: #2196F3;
+      background: #00838f;
       color: white;
-      padding: 10px 20px;
-      border-radius: 5px;
+      padding: 12px 24px;
+      border-radius: 25px;
+      transition: background 0.3s;
+      text-align: center;
     }
   </style>
 </head>
@@ -98,7 +135,9 @@
     <tbody id="tabelaVendas"></tbody>
   </table>
 
-  <a class="voltar" href="index.html">Voltar ao Dashboard</a>
+  <div style="text-align: center">
+    <a class="voltar" href="index.html">⬅ Voltar ao Dashboard</a>
+  </div>
 
   <script>
     const formVenda = document.getElementById('formVendas');
