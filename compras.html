@@ -163,98 +163,122 @@
   </aside>
 
   <main class="main">
-    <h2>Registro de Compras</h2>
+  <h2>Registro de Compras</h2>
 
-    <form id="formCompras">
-      <input type="date" id="data" required>
-      <input type="text" id="produto" placeholder="Produto" required>
-      <input type="number" id="quantidade" placeholder="Quantidade" required>
-      <input type="number" id="valorCompra" placeholder="Valor Unitário" required>
-      <button type="submit">Salvar</button>
-    </form>
+  <form id="formCompras">
+    <input type="date" id="data" required>
+    <input type="text" id="produto" placeholder="Produto" required>
+    <input type="number" id="quantidade" placeholder="Quantidade" required>
+    <input type="number" id="valorCompra" placeholder="Valor Unitário" required>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Data</th>
-          <th>Produto</th>
-          <th>Quantidade</th>
-          <th>Valor Unit.</th>
-          <th>Total</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody id="tabelaCompras"></tbody>
-    </table>
+    <!-- NOVO: Campo de seleção de fornecedor -->
+    <select id="fornecedor" required>
+      <option value="">Selecione o Fornecedor</option>
+    </select>
 
-    <div style="text-align: center">
-      <a class="voltar" href="dashboard.html">⬅ Voltar ao Dashboard</a>
-    </div>
-  </main>
+    <button type="submit">Salvar</button>
+  </form>
 
-  <script>
-    const form = document.getElementById('formCompras');
-    const tabela = document.getElementById('tabelaCompras');
+  <table>
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Produto</th>
+        <th>Fornecedor</th>
+        <th>Quantidade</th>
+        <th>Valor Unit.</th>
+        <th>Total</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="tabelaCompras"></tbody>
+  </table>
 
-    let compras = JSON.parse(localStorage.getItem("compras")) || [];
-    let editando = null;
+  <div style="text-align: center">
+    <a class="voltar" href="dashboard.html">⬅ Voltar ao Dashboard</a>
+  </div>
+</main>
 
-    function renderizar() {
-      tabela.innerHTML = '';
-      compras.forEach((c, i) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${c.data}</td>
-          <td>${c.produto}</td>
-          <td>${c.quantidade}</td>
-          <td>R$ ${parseFloat(c.valor).toFixed(2)}</td>
-          <td>R$ ${(parseFloat(c.valor) * c.quantidade).toFixed(2)}</td>
-          <td>
-            <button class="btn editar" onclick="editar(${i})">Editar</button>
-            <button class="btn excluir" onclick="excluir(${i})">Excluir</button>
-          </td>
-        `;
-        tabela.appendChild(row);
-      });
+<script>
+  const form = document.getElementById('formCompras');
+  const tabela = document.getElementById('tabelaCompras');
+  const fornecedorSelect = document.getElementById('fornecedor');
 
-      localStorage.setItem("compras", JSON.stringify(compras));
-    }
+  let compras = JSON.parse(localStorage.getItem("compras")) || [];
+  let fornecedores = JSON.parse(localStorage.getItem("fornecedores")) || [];
+  let editando = null;
 
-    form.addEventListener('submit', e => {
-      e.preventDefault();
-      const data = document.getElementById('data').value;
-      const produto = document.getElementById('produto').value;
-      const quantidade = parseInt(document.getElementById('quantidade').value);
-      const valor = parseFloat(document.getElementById('valorCompra').value);
-      const compra = { data, produto, quantidade, valor };
+  function preencherFornecedores() {
+    fornecedorSelect.innerHTML = '<option value="">Selecione o Fornecedor</option>';
+    fornecedores.forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f.nome;
+      opt.textContent = f.nome;
+      fornecedorSelect.appendChild(opt);
+    });
+  }
 
-      if (editando !== null) {
-        compras[editando] = compra;
-        editando = null;
-      } else {
-        compras.push(compra);
-      }
-
-      form.reset();
-      renderizar();
+  function renderizar() {
+    tabela.innerHTML = '';
+    compras.forEach((c, i) => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${c.data}</td>
+        <td>${c.produto}</td>
+        <td>${c.fornecedor || '-'}</td>
+        <td>${c.quantidade}</td>
+        <td>R$ ${parseFloat(c.valor).toFixed(2)}</td>
+        <td>R$ ${(parseFloat(c.valor) * c.quantidade).toFixed(2)}</td>
+        <td>
+          <button class="btn editar" onclick="editar(${i})">Editar</button>
+          <button class="btn excluir" onclick="excluir(${i})">Excluir</button>
+        </td>
+      `;
+      tabela.appendChild(row);
     });
 
-    window.editar = i => {
-      const c = compras[i];
-      document.getElementById('data').value = c.data;
-      document.getElementById('produto').value = c.produto;
-      document.getElementById('quantidade').value = c.quantidade;
-      document.getElementById('valorCompra').value = c.valor;
-      editando = i;
-    };
+    localStorage.setItem("compras", JSON.stringify(compras));
+  }
 
-    window.excluir = i => {
-      compras.splice(i, 1);
-      renderizar();
-    };
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const data = document.getElementById('data').value;
+    const produto = document.getElementById('produto').value;
+    const quantidade = parseInt(document.getElementById('quantidade').value);
+    const valor = parseFloat(document.getElementById('valorCompra').value);
+    const fornecedor = fornecedorSelect.value;
 
+    const compra = { data, produto, quantidade, valor, fornecedor };
+
+    if (editando !== null) {
+      compras[editando] = compra;
+      editando = null;
+    } else {
+      compras.push(compra);
+    }
+
+    form.reset();
     renderizar();
-  </script>
+  });
+
+  window.editar = i => {
+    const c = compras[i];
+    document.getElementById('data').value = c.data;
+    document.getElementById('produto').value = c.produto;
+    document.getElementById('quantidade').value = c.quantidade;
+    document.getElementById('valorCompra').value = c.valor;
+    fornecedorSelect.value = c.fornecedor || '';
+    editando = i;
+  };
+
+  window.excluir = i => {
+    compras.splice(i, 1);
+    renderizar();
+  };
+
+  preencherFornecedores();
+  renderizar();
+</script>
 
 </body>
 </html>
