@@ -1,104 +1,196 @@
-<!-- Exemplo para compras.html com melhorias visuais e localStorage -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <title>Compras</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #f9f9f9;
-      padding: 40px;
-    }
-    h2 {
-      text-align: center;
-      color: #333;
-    }
-    form {
       display: flex;
-      justify-content: center;
-      gap: 10px;
-      flex-wrap: wrap;
+      background: #f4f6fa;
+      color: #2f4f4f;
+      min-height: 100vh;
+      animation: fadeIn 0.2s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .sidebar {
+      width: 220px;
+      background: #111827;
+      color: #fff;
+      padding: 30px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .sidebar h2 {
+      font-size: 20px;
       margin-bottom: 30px;
     }
+
+    .sidebar a {
+      color: #cbd5e1;
+      text-decoration: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      display: block;
+      transition: 0.3s;
+    }
+
+    .sidebar a:hover,
+    .sidebar a.active {
+      background: #1e293b;
+      color: #fff;
+    }
+
+    .main {
+      flex: 1;
+      padding: 30px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 26px;
+      color: #008080;
+    }
+
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 40px;
+    }
+
     input, button {
       padding: 10px;
       font-size: 16px;
+      border-radius: 6px;
       border: 1px solid #ccc;
-      border-radius: 5px;
     }
+
     button {
-      background: #4CAF50;
+      background: #20b2aa;
       color: white;
+      border: none;
       cursor: pointer;
     }
+
     button:hover {
-      background: #45a049;
+      background: #008b8b;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
       background: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }
+
     th, td {
-      border: 1px solid #ddd;
-      padding: 10px;
+      padding: 12px 10px;
       text-align: center;
+      border-bottom: 1px solid #eee;
     }
+
     th {
-      background-color: #f2f2f2;
+      background: #e0f7fa;
+      color: #2f4f4f;
+      font-weight: 600;
     }
+
     .btn {
-      padding: 5px 10px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .editar {
-      background: gold;
-    }
-    .excluir {
-      background: crimson;
-      color: white;
-    }
-    .voltar {
-      display: block;
-      margin: 20px auto;
-      text-align: center;
-      text-decoration: none;
-      background: #2196F3;
-      color: white;
-      padding: 10px 20px;
+      padding: 6px 12px;
       border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .editar {
+      background: #ffd700;
+      color: #333;
+    }
+
+    .excluir {
+      background: #dc143c;
+      color: white;
+    }
+
+    .voltar {
+      display: inline-block;
+      margin-top: 40px;
+      text-decoration: none;
+      background: #008080;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 25px;
+      text-align: center;
+      transition: background 0.3s;
+    }
+
+    .voltar:hover {
+      background: #006666;
     }
   </style>
 </head>
 <body>
-  <h2>Registro de Compras</h2>
 
-  <form id="formCompras">
-    <input type="date" id="data" required>
-    <input type="text" id="produto" placeholder="Produto" required>
-    <input type="number" id="quantidade" placeholder="Quantidade" required>
-    <input type="number" id="valorCompra" placeholder="Valor Unitário" required>
-    <button type="submit">Salvar</button>
-  </form>
+  <aside class="sidebar">
+    <h2>📦 Compras</h2>
+    <nav>
+      <a href="dashboard.html">🏠 Dashboard</a>
+      <a href="compras.html" class="active">🛒 Compras</a>
+      <a href="vendas.html">💰 Vendas</a>
+      <a href="clientes.html">👤 Clientes</a>
+      <a href="fornecedores.html">🏭 Fornecedores</a>
+      <a href="estoque.html">📦 Estoque</a>
+      <a href="contas-receber.html">📥 Contas a Receber</a>
+      <a href="contas-pagar.html">📤 Contas a Pagar</a>
+    </nav>
+  </aside>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Data</th>
-        <th>Produto</th>
-        <th>Quantidade</th>
-        <th>Valor Unit.</th>
-        <th>Total</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody id="tabelaCompras"></tbody>
-  </table>
+  <main class="main">
+    <h2>Registro de Compras</h2>
 
-  <a class="voltar" href="index.html">Voltar ao Dashboard</a>
+    <form id="formCompras">
+      <input type="date" id="data" required>
+      <input type="text" id="produto" placeholder="Produto" required>
+      <input type="number" id="quantidade" placeholder="Quantidade" required>
+      <input type="number" id="valorCompra" placeholder="Valor Unitário" required>
+      <button type="submit">Salvar</button>
+    </form>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Produto</th>
+          <th>Quantidade</th>
+          <th>Valor Unit.</th>
+          <th>Total</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaCompras"></tbody>
+    </table>
+
+    <div style="text-align: center">
+      <a class="voltar" href="dashboard.html">⬅ Voltar ao Dashboard</a>
+    </div>
+  </main>
 
   <script>
     const form = document.getElementById('formCompras');
@@ -115,8 +207,8 @@
           <td>${c.data}</td>
           <td>${c.produto}</td>
           <td>${c.quantidade}</td>
-          <td>R$ ${c.valor.toFixed(2)}</td>
-          <td>R$ ${(c.valor * c.quantidade).toFixed(2)}</td>
+          <td>R$ ${parseFloat(c.valor).toFixed(2)}</td>
+          <td>R$ ${(parseFloat(c.valor) * c.quantidade).toFixed(2)}</td>
           <td>
             <button class="btn editar" onclick="editar(${i})">Editar</button>
             <button class="btn excluir" onclick="excluir(${i})">Excluir</button>
@@ -163,5 +255,6 @@
 
     renderizar();
   </script>
+
 </body>
 </html>
