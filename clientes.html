@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastro de Clientes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      display: flex;
+      background: #e0f7fa;
+      min-height: 100vh;
+      animation: fadeIn 0.2s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .sidebar {
+      width: 220px;
+      background: #111827;
+      color: #fff;
+      padding: 30px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .sidebar h2 {
+      font-size: 20px;
+      margin-bottom: 30px;
+    }
+
+    .sidebar a {
+      color: #cbd5e1;
+      text-decoration: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      display: block;
+      transition: 0.3s;
+    }
+
+    .sidebar a:hover,
+    .sidebar a.active {
+      background: #1e293b;
+      color: #fff;
+    }
+
+    .main {
+      flex: 1;
+      padding: 30px;
+    }
+
+    h2 {
+      text-align: center;
+      color: #008080;
+      margin-bottom: 30px;
+    }
+
+    form {
+      margin-bottom: 30px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    input, textarea, button {
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    input, textarea {
+      flex: 1 1 200px;
+    }
+
+    button {
+      background-color: #00bcd4;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #0097a7;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    th, td {
+      border-bottom: 1px solid #eee;
+      padding: 12px;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #00acc1;
+      color: white;
+    }
+
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    .btn {
+      padding: 5px 10px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .editar {
+      background: #ffb300;
+      color: #fff;
+    }
+
+    .excluir {
+      background: #e53935;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <h2>👤 Clientes</h2>
+    <nav>
+      <a href="dashboard.html">🏠 Dashboard</a>
+      <a href="compras.html">🛒 Compras</a>
+      <a href="vendas.html">💰 Vendas</a>
+      <a href="clientes.html" class="active">👤 Clientes</a>
+      <a href="fornecedores.html">🏭 Fornecedores</a>
+      <a href="estoque.html">📦 Estoque</a>
+      <a href="contas-receber-simples.html">📥 Contas a Receber</a>
+      <a href="contas-pagar.html">📤 Contas a Pagar</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <h2>Cadastro de Clientes</h2>
+
+    <form id="formClientes">
+      <input type="text" id="nomeCliente" placeholder="Nome" required>
+      <input type="text" id="cpfCliente" placeholder="CPF">
+      <input type="text" id="telefoneCliente" placeholder="Telefone">
+      <input type="email" id="emailCliente" placeholder="Email">
+      <input type="text" id="enderecoCliente" placeholder="Endereço">
+      <textarea id="obsCliente" placeholder="Observações"></textarea>
+      <button type="submit">Salvar Cliente</button>
+    </form>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>CPF</th>
+          <th>Telefone</th>
+          <th>Email</th>
+          <th>Endereço</th>
+          <th>Obs</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaClientes"></tbody>
+    </table>
+  </main>
+
+  <script>
+    let clientes = JSON.parse(localStorage.getItem("clientes")) || [];
+    let editandoCliente = null;
+    const tabelaClientes = document.getElementById("tabelaClientes");
+
+    function renderizarClientes() {
+      tabelaClientes.innerHTML = "";
+      clientes.forEach((c, i) => {
+        tabelaClientes.innerHTML += `
+          <tr>
+            <td>${c.nome}</td>
+            <td>${c.cpf}</td>
+            <td>${c.telefone}</td>
+            <td>${c.email}</td>
+            <td>${c.endereco}</td>
+            <td>${c.obs}</td>
+            <td>
+              <button class="btn editar" onclick="editarCliente(${i})">Editar</button>
+              <button class="btn excluir" onclick="excluirCliente(${i})">Excluir</button>
+            </td>
+          </tr>`;
+      });
+      localStorage.setItem("clientes", JSON.stringify(clientes));
+    }
+
+    document.getElementById("formClientes").addEventListener("submit", e => {
+      e.preventDefault();
+      const cliente = {
+        nome: document.getElementById("nomeCliente").value,
+        cpf: document.getElementById("cpfCliente").value,
+        telefone: document.getElementById("telefoneCliente").value,
+        email: document.getElementById("emailCliente").value,
+        endereco: document.getElementById("enderecoCliente").value,
+        obs: document.getElementById("obsCliente").value
+      };
+      if (editandoCliente !== null) {
+        clientes[editandoCliente] = cliente;
+        editandoCliente = null;
+      } else {
+        clientes.push(cliente);
+      }
+      renderizarClientes();
+      e.target.reset();
+    });
+
+    function excluirCliente(i) {
+      clientes.splice(i, 1);
+      renderizarClientes();
+    }
+
+    function editarCliente(i) {
+      const c = clientes[i];
+      document.getElementById("nomeCliente").value = c.nome;
+      document.getElementById("cpfCliente").value = c.cpf;
+      document.getElementById("telefoneCliente").value = c.telefone;
+      document.getElementById("emailCliente").value = c.email;
+      document.getElementById("enderecoCliente").value = c.endereco;
+      document.getElementById("obsCliente").value = c.obs;
+      editandoCliente = i;
+    }
+
+    renderizarClientes();
+  </script>
+
+</body>
+</html>

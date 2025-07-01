@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Contas a Pagar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      display: flex;
+      background: #e0f7fa;
+      min-height: 100vh;
+      animation: fadeIn 0.2s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .sidebar {
+      width: 220px;
+      background: #111827;
+      color: #fff;
+      padding: 30px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .sidebar h2 {
+      font-size: 20px;
+      margin-bottom: 30px;
+    }
+
+    .sidebar a {
+      color: #cbd5e1;
+      text-decoration: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      display: block;
+      transition: 0.3s;
+    }
+
+    .sidebar a:hover,
+    .sidebar a.active {
+      background: #1e293b;
+      color: #fff;
+    }
+
+    .main {
+      flex: 1;
+      padding: 30px;
+    }
+
+    h2 {
+      color: #008080;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 28px;
+    }
+
+    .filtro {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    select {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    th, td {
+      padding: 14px 12px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+      font-size: 15px;
+    }
+
+    th {
+      background: #00bcd4;
+      color: white;
+      font-weight: 600;
+    }
+
+    tr:hover {
+      background: #f1f1f1;
+    }
+
+    .btn-baixar {
+      background: #d32f2f;
+      border: none;
+      padding: 6px 12px;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn-baixar[disabled] {
+      background: #aaa;
+      cursor: default;
+    }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <h2>📤 Contas a Pagar</h2>
+    <nav>
+      <a href="dashboard.html">🏠 Dashboard</a>
+      <a href="compras.html">🛒 Compras</a>
+      <a href="vendas.html">💰 Vendas</a>
+      <a href="clientes.html">👤 Clientes</a>
+      <a href="fornecedores.html">🏭 Fornecedores</a>
+      <a href="estoque.html">📦 Estoque</a>
+      <a href="contas-receber-simples.html">📥 Contas a Receber</a>
+      <a href="contas-pagar.html" class="active">📤 Contas a Pagar</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <h2>Contas a Pagar</h2>
+
+    <div class="filtro">
+      <label for="filtroStatus">Filtrar por status: </label>
+      <select id="filtroStatus">
+        <option value="todos">Todos</option>
+        <option value="em aberto">Em Aberto</option>
+        <option value="pago">Pago</option>
+      </select>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Produto</th>
+          <th>Quantidade</th>
+          <th>Valor Unit.</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaContasPagar"></tbody>
+    </table>
+  </main>
+
+  <script>
+    const tabela = document.getElementById('tabelaContasPagar');
+    const filtroStatus = document.getElementById('filtroStatus');
+
+    let compras = JSON.parse(localStorage.getItem('compras')) || [];
+    compras = compras.map(c => ({
+      ...c,
+      status: c.status || 'em aberto'
+    }));
+
+    function salvarLocalStorage() {
+      localStorage.setItem('compras', JSON.stringify(compras));
+    }
+
+    function renderizar() {
+      const filtro = filtroStatus.value;
+      tabela.innerHTML = '';
+
+      let comprasFiltradas = compras;
+      if (filtro !== 'todos') {
+        comprasFiltradas = compras.filter(c => c.status === filtro);
+      }
+
+      comprasFiltradas.forEach((c, i) => {
+        const valor = parseFloat(c.valor) || 0;
+        const quantidade = parseInt(c.quantidade) || 0;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${c.data}</td>
+          <td>${c.produto}</td>
+          <td>${quantidade}</td>
+          <td>R$ ${valor.toFixed(2)}</td>
+          <td>R$ ${(valor * quantidade).toFixed(2)}</td>
+          <td>${c.status}</td>
+          <td>
+            <button class="btn-baixar" ${c.status === 'pago' ? 'disabled' : ''} onclick="darBaixa(${i})">
+              Dar Baixa
+            </button>
+          </td>
+        `;
+        tabela.appendChild(tr);
+      });
+    }
+
+    function darBaixa(index) {
+      compras[index].status = 'pago';
+      salvarLocalStorage();
+      renderizar();
+    }
+
+    filtroStatus.addEventListener('change', renderizar);
+    window.darBaixa = darBaixa;
+
+    renderizar();
+  </script>
+
+</body>
+</html>

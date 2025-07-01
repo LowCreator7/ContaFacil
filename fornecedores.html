@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastro de Fornecedores</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      display: flex;
+      background: #e0f7fa;
+      min-height: 100vh;
+     animation: fadeIn 0.2s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .sidebar {
+      width: 220px;
+      background: #111827;
+      color: #fff;
+      padding: 30px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .sidebar h2 {
+      font-size: 20px;
+      margin-bottom: 30px;
+    }
+
+    .sidebar a {
+      color: #cbd5e1;
+      text-decoration: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      display: block;
+      transition: 0.3s;
+    }
+
+    .sidebar a:hover,
+    .sidebar a.active {
+      background: #1e293b;
+      color: #fff;
+    }
+
+    .main {
+      flex: 1;
+      padding: 30px;
+    }
+
+    h2 {
+      text-align: center;
+      color: #008080;
+      margin-bottom: 30px;
+    }
+
+    form {
+      margin-bottom: 30px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    input, textarea, button {
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    input, textarea {
+      flex: 1 1 200px;
+    }
+
+    button {
+      background-color: #00bcd4;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background-color: #0097a7;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    th, td {
+      border-bottom: 1px solid #eee;
+      padding: 12px;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #00acc1;
+      color: white;
+    }
+
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    .btn {
+      padding: 5px 10px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .editar {
+      background: #ff9800;
+      color: white;
+    }
+
+    .excluir {
+      background: #e53935;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <h2>🏭 Fornecedores</h2>
+    <nav>
+      <a href="dashboard.html">🏠 Dashboard</a>
+      <a href="compras.html">🛒 Compras</a>
+      <a href="vendas.html">💰 Vendas</a>
+      <a href="clientes.html">👤 Clientes</a>
+      <a href="fornecedores.html" class="active">🏭 Fornecedores</a>
+      <a href="estoque.html">📦 Estoque</a>
+      <a href="contas-receber-simples.html">📥 Contas a Receber</a>
+      <a href="contas-pagar.html">📤 Contas a Pagar</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <h2>Cadastro de Fornecedores</h2>
+
+    <form id="formFornecedores">
+      <input type="text" id="nomeFornecedor" placeholder="Nome" required>
+      <input type="text" id="cnpjFornecedor" placeholder="CNPJ">
+      <input type="text" id="telefoneFornecedor" placeholder="Telefone">
+      <input type="email" id="emailFornecedor" placeholder="Email">
+      <input type="text" id="enderecoFornecedor" placeholder="Endereço">
+      <textarea id="obsFornecedor" placeholder="Observações"></textarea>
+      <button type="submit">Salvar Fornecedor</button>
+    </form>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>CNPJ</th>
+          <th>Telefone</th>
+          <th>Email</th>
+          <th>Endereço</th>
+          <th>Obs</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaFornecedores"></tbody>
+    </table>
+  </main>
+
+  <script>
+    let fornecedores = JSON.parse(localStorage.getItem("fornecedores")) || [];
+    let editandoFornecedor = null;
+    const tabelaFornecedores = document.getElementById("tabelaFornecedores");
+
+    function renderizarFornecedores() {
+      tabelaFornecedores.innerHTML = "";
+      fornecedores.forEach((f, i) => {
+        tabelaFornecedores.innerHTML += `
+          <tr>
+            <td>${f.nome}</td>
+            <td>${f.cnpj}</td>
+            <td>${f.telefone}</td>
+            <td>${f.email}</td>
+            <td>${f.endereco}</td>
+            <td>${f.obs}</td>
+            <td>
+              <button class="btn editar" onclick="editarFornecedor(${i})">Editar</button>
+              <button class="btn excluir" onclick="excluirFornecedor(${i})">Excluir</button>
+            </td>
+          </tr>`;
+      });
+      localStorage.setItem("fornecedores", JSON.stringify(fornecedores));
+    }
+
+    document.getElementById("formFornecedores").addEventListener("submit", e => {
+      e.preventDefault();
+      const fornecedor = {
+        nome: document.getElementById("nomeFornecedor").value,
+        cnpj: document.getElementById("cnpjFornecedor").value,
+        telefone: document.getElementById("telefoneFornecedor").value,
+        email: document.getElementById("emailFornecedor").value,
+        endereco: document.getElementById("enderecoFornecedor").value,
+        obs: document.getElementById("obsFornecedor").value
+      };
+      if (editandoFornecedor !== null) {
+        fornecedores[editandoFornecedor] = fornecedor;
+        editandoFornecedor = null;
+      } else {
+        fornecedores.push(fornecedor);
+      }
+      renderizarFornecedores();
+      e.target.reset();
+    });
+
+    function excluirFornecedor(i) {
+      fornecedores.splice(i, 1);
+      renderizarFornecedores();
+    }
+
+    function editarFornecedor(i) {
+      const f = fornecedores[i];
+      document.getElementById("nomeFornecedor").value = f.nome;
+      document.getElementById("cnpjFornecedor").value = f.cnpj;
+      document.getElementById("telefoneFornecedor").value = f.telefone;
+      document.getElementById("emailFornecedor").value = f.email;
+      document.getElementById("enderecoFornecedor").value = f.endereco;
+      document.getElementById("obsFornecedor").value = f.obs;
+      editandoFornecedor = i;
+    }
+
+    renderizarFornecedores();
+  </script>
+
+</body>
+</html>
