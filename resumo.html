@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Resumo Financeiro</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f4f4;
+      padding: 40px;
+      text-align: center;
+    }
+    h2 {
+      color: #333;
+      margin-bottom: 30px;
+    }
+    .box {
+      background: white;
+      padding: 20px;
+      margin: 10px auto;
+      max-width: 400px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .label {
+      font-size: 18px;
+      color: #666;
+    }
+    .value {
+      font-size: 24px;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+    .voltar {
+      display: inline-block;
+      margin-top: 30px;
+      text-decoration: none;
+      background: #2196F3;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Resumo Financeiro</h2>
+
+  <div class="box">
+    <div class="label">Total em Compras</div>
+    <div id="totalCompras" class="value">R$ 0,00</div>
+  </div>
+
+  <div class="box">
+    <div class="label">Total em Vendas</div>
+    <div id="totalVendas" class="value">R$ 0,00</div>
+  </div>
+
+  <div class="box">
+    <div class="label">Lucro</div>
+    <div id="lucro" class="value">R$ 0,00</div>
+  </div>
+
+  <a class="voltar" href="dashboard.html">Voltar ao Dashboard</a>
+
+  <script>
+    const compras = JSON.parse(localStorage.getItem("compras")) || [];
+    const vendas = JSON.parse(localStorage.getItem("vendas")) || [];
+
+    const totalCompras = compras.reduce((acc, item) => acc + (item.valor * item.quantidade), 0);
+    const totalVendas = vendas.reduce((acc, item) => acc + (item.valor * item.quantidade), 0);
+    const lucro = totalVendas - totalCompras;
+
+    document.getElementById("totalCompras").textContent = `R$ ${totalCompras.toFixed(2)}`;
+    document.getElementById("totalVendas").textContent = `R$ ${totalVendas.toFixed(2)}`;
+    document.getElementById("lucro").textContent = `R$ ${lucro.toFixed(2)}`;
+  </script>
+</body>
+</html>

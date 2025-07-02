@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Controle Loja - Blusas Caneladas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+    }
+
+    form {
+      margin-bottom: 20px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      max-width: 600px;
+    }
+
+    input, select, button {
+      padding: 8px;
+      font-size: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .resultado {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    .btn {
+      padding: 5px 10px;
+      margin: 0 2px;
+      cursor: pointer;
+    }
+
+    .editar {
+      background-color: #ffd700;
+      border: none;
+    }
+
+    .excluir {
+      background-color: #ff4d4d;
+      border: none;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h2>Controle Loja - Blusas Caneladas</h2>
+
+  <form id="formLancamento">
+    <input type="date" id="data" required />
+    <input type="text" id="produto" placeholder="Produto / Tamanho / Cor" required />
+    <input type="number" id="qtdCompra" placeholder="Qtd. Comprada" required />
+    <input type="number" id="qtdVenda" placeholder="Qtd. Vendida" required />
+    <input type="number" id="valorCompra" placeholder="Valor Unit. Compra" required />
+    <input type="number" id="valorVenda" placeholder="Valor Unit. Venda" required />
+    <button type="submit">Salvar</button>
+  </form>
+
+  <table id="tabelaControle">
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Produto</th>
+        <th>Qtd Compra</th>
+        <th>Qtd Venda</th>
+        <th>Vlr Compra</th>
+        <th>Vlr Venda</th>
+        <th>Lucro</th>
+        <th>Saldo</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="resultado" id="resultadoFinal">
+    Lucro Total: R$ 0,00 | Saldo de Estoque: 0 unidades
+  </div>
+
+  <script>
+    const form = document.getElementById("formLancamento");
+    const tabela = document.querySelector("#tabelaControle tbody");
+    const resultadoFinal = document.getElementById("resultadoFinal");
+
+    let totalLucro = 0;
+    let totalSaldo = 0;
+    let editandoIndex = null;
+
+    const lancamentos = [];
+
+    function atualizarTotais() {
+      totalLucro = lancamentos.reduce((acc, l) => acc + l.lucro, 0);
+      totalSaldo = lancamentos.reduce((acc, l) => acc + l.saldo, 0);
+      resultadoFinal.textContent = `Lucro Total: R$ ${totalLucro.toFixed(2)} | Saldo de Estoque: ${totalSaldo} unidades`;
+    }
+
+    function renderizarTabela() {
+      tabela.innerHTML = "";
+      lancamentos.forEach((l, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${l.data}</td>
+          <td>${l.produto}</td>
+          <td>${l.qtdCompra}</td>
+          <td>${l.qtdVenda}</td>
+          <td>R$ ${l.valorCompra.toFixed(2)}</td>
+          <td>R$ ${l.valorVenda.toFixed(2)}</td>
+          <td>R$ ${l.lucro.toFixed(2)}</td>
+          <td>${l.saldo}</td>
+          <td>
+            <button class="btn editar" onclick="editarLancamento(${index})">Editar</button>
+            <button class="btn excluir" onclick="excluirLancamento(${index})">Excluir</button>
+          </td>
+        `;
+        tabela.appendChild(row);
+      });
+    }
+
+    function editarLancamento(index) {
+      const l = lancamentos[index];
+      document.getElementById("data").value = l.data;
+      document.getElementById("produto").value = l.produto;
+      document.getElementById("qtdCompra").value = l.qtdCompra;
+      document.getElementById("qtdVenda").value = l.qtdVenda;
+      document.getElementById("valorCompra").value = l.valorCompra;
+      document.getElementById("valorVenda").value = l.valorVenda;
+      editandoIndex = index;
+    }
+
+    function excluirLancamento(index) {
+      lancamentos.splice(index, 1);
+      renderizarTabela();
+      atualizarTotais();
+    }
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const data = document.getElementById("data").value;
+      const produto = document.getElementById("produto").value;
+      const qtdCompra = parseInt(document.getElementById("qtdCompra").value);
+      const qtdVenda = parseInt(document.getElementById("qtdVenda").value);
+      const valorCompra = parseFloat(document.getElementById("valorCompra").value);
+      const valorVenda = parseFloat(document.getElementById("valorVenda").value);
+      const lucro = (valorVenda - valorCompra) * qtdVenda;
+      const saldo = qtdCompra - qtdVenda;
+
+      const novoLancamento = {
+        data, produto, qtdCompra, qtdVenda, valorCompra, valorVenda, lucro, saldo
+      };
+
+      if (editandoIndex !== null) {
+        lancamentos[editandoIndex] = novoLancamento;
+        editandoIndex = null;
+      } else {
+        lancamentos.push(novoLancamento);
+      }
+
+      form.reset();
+      renderizarTabela();
+      atualizarTotais();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>DRE Analítica</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      background-color: #E6FAF9;
+      color: #004D4D;
+      display: flex;
+      min-height: 100vh;
+      animation: fadeIn 0.6s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .sidebar {
+      width: 220px;
+      background: #2F4F4F;
+      color: #fff;
+      padding: 30px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .sidebar h2 {
+      font-size: 20px;
+      margin-bottom: 30px;
+    }
+
+    .sidebar a {
+      color: #AEEEEE;
+      text-decoration: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      transition: 0.3s;
+      display: block;
+    }
+
+    .sidebar a:hover,
+    .sidebar a.active {
+      background-color: #008B8B;
+      color: #ffffff;
+    }
+
+    .main {
+      flex: 1;
+      padding: 30px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 26px;
+      color: #008080;
+    }
+
+    .filtros {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    input[type="date"] {
+      padding: 8px;
+      font-size: 15px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #008080;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #006666;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+    }
+
+    th {
+      background: #00acc1;
+      color: white;
+    }
+
+    tr.subtotal {
+      background: #e0f7fa;
+      font-weight: bold;
+    }
+
+    .voltar {
+      display: block;
+      text-align: center;
+      margin-top: 30px;
+      text-decoration: none;
+      background: #008080;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 25px;
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <h2>📊 Financeiro</h2>
+    <nav>
+      <a href="dashboard.html">🏠 Dashboard</a>
+      <a href="compras.html">🛒 Compras</a>
+      <a href="vendas.html">💰 Vendas</a>
+      <a href="clientes.html">👤 Clientes</a>
+      <a href="fornecedores.html">🏭 Fornecedores</a>
+      <a href="contas-receber-simples.html">📥 Contas a Receber</a>
+      <a href="contas-pagar.html">📤 Contas a Pagar</a>
+      <a href="despesas.html">💸 Despesas</a>
+      <a href="estoque.html">📦 Estoque</a>
+      <a href="dre.html" class="active">📊 DRE</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <h2>DRE Analítica</h2>
+
+    <div class="filtros">
+      <label>De: <input type="date" id="dataInicio"></label>
+      <label>Até: <input type="date" id="dataFim"></label>
+      <button onclick="gerarDRE()">Gerar DRE</button>
+    </div>
+
+    <table id="dreTabela">
+      <thead>
+        <tr><th>Categoria</th><th>Valor</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <a class="voltar" href="dashboard.html">⬅ Voltar ao Dashboard</a>
+  </main>
+
+  <script>
+    function gerarDRE() {
+      const inicio = new Date(document.getElementById('dataInicio').value);
+      const fim = new Date(document.getElementById('dataFim').value);
+      const compras = JSON.parse(localStorage.getItem('compras')) || [];
+      const vendas = JSON.parse(localStorage.getItem('vendas')) || [];
+      const despesas = JSON.parse(localStorage.getItem('despesas')) || [];
+
+      let estoqueInicial = 0, estoqueFinal = 0, totalCompras = 0, totalVendas = 0, totalDespesas = 0;
+      const categoriasDespesas = {};
+
+      compras.forEach(c => {
+        const d = new Date(c.data);
+        if (d < inicio) estoqueInicial += c.quantidade * c.valor;
+        if (d >= inicio && d <= fim) totalCompras += c.quantidade * c.valor;
+        if (d > fim) estoqueFinal += c.quantidade * c.valor;
+      });
+
+      vendas.forEach(v => {
+        const d = new Date(v.data);
+        if (d >= inicio && d <= fim) totalVendas += v.quantidade * v.valor;
+      });
+
+      despesas.forEach(d => {
+        const dt = new Date(d.data);
+        if (dt >= inicio && dt <= fim) {
+          totalDespesas += d.valor;
+          categoriasDespesas[d.categoria] = (categoriasDespesas[d.categoria] || 0) + d.valor;
+        }
+      });
+
+      const CMV = estoqueInicial + totalCompras - estoqueFinal;
+      const resultadoBruto = totalVendas - CMV;
+      const resultadoLiquido = resultadoBruto - totalDespesas;
+
+      const tbody = document.querySelector("#dreTabela tbody");
+      tbody.innerHTML = `
+        <tr class="subtotal"><td>Receita de Vendas</td><td>R$ ${totalVendas.toFixed(2)}</td></tr>
+        <tr><td>Estoque Inicial</td><td>R$ ${estoqueInicial.toFixed(2)}</td></tr>
+        <tr><td>Compras</td><td>R$ ${totalCompras.toFixed(2)}</td></tr>
+        <tr><td>Estoque Final</td><td>R$ ${estoqueFinal.toFixed(2)}</td></tr>
+        <tr class="subtotal"><td>CMV</td><td>R$ ${CMV.toFixed(2)}</td></tr>
+        <tr class="subtotal"><td>Resultado Bruto</td><td>R$ ${resultadoBruto.toFixed(2)}</td></tr>
+        <tr class="subtotal"><td>Despesas Operacionais</td><td>R$ ${totalDespesas.toFixed(2)}</td></tr>
+      `;
+
+      for (const categoria in categoriasDespesas) {
+        tbody.innerHTML += `<tr><td>- ${categoria}</td><td>R$ ${categoriasDespesas[categoria].toFixed(2)}</td></tr>`;
+      }
+
+      tbody.innerHTML += `<tr class="subtotal"><td>Lucro/Prejuízo Líquido</td><td>R$ ${resultadoLiquido.toFixed(2)}</td></tr>`;
+    }
+  </script>
+</body>
+</html>
