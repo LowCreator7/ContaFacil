@@ -53,6 +53,17 @@ export async function atualizarNoFirestore(caminho, id, dadosAtualizados) {
   }
 }
 
+// ✏️ Atualizar documento existente no Firestore
+export async function atualizarNoFirestore(caminho, id, dados) {
+  try {
+    const ref = doc(db, caminho, id);
+    await updateDoc(ref, dados);
+    console.log(`Atualizado com sucesso: ${caminho}/${id}`);
+  } catch (e) {
+    console.error("Erro ao atualizar:", e);
+  }
+}
+
 // 💵 Formatar valor R$
 export function formatarReal(valor) {
   return valor.toLocaleString('pt-BR', {
