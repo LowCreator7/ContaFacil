@@ -17,7 +17,7 @@
       <a href="produtos.html">📄 Produtos</a>
       <a href="clientes.html">👤 Clientes</a>
       <a href="fornecedores.html">🏭 Fornecedores</a>
-      <a href="contas-receber-simples.html">📥 Contas a Receber</a>
+      <a href="contas-receber-simples.html" class="active">📥 Contas a Receber</a>
       <a href="contas-pagar.html">📤 Contas a Pagar</a>
       <a href="despesas.html">💸 Despesas</a>
       <a href="estoque.html">📦 Estoque</a>
@@ -62,116 +62,116 @@
   </main>
 
   <script type="module">
-  import {
-    carregarDoFirestore,
-    atualizarCampoDoFirestore
-  } from './script-firebase.js';
+    import {
+      carregarDoFirestore,
+      atualizarCampoDoFirestore
+    } from './script-firebase.js';
 
-  const tabela = document.getElementById("tabelaReceber");
-  const filtroStatus = document.getElementById("filtroStatus");
-  const dataInicio = document.getElementById("dataInicio");
-  const dataFim = document.getElementById("dataFim");
+    const tabela = document.getElementById("tabelaReceber");
+    const filtroStatus = document.getElementById("filtroStatus");
+    const dataInicio = document.getElementById("dataInicio");
+    const dataFim = document.getElementById("dataFim");
 
-  let vendas = [];
+    let vendas = [];
 
-  const formatar = valor => valor.toLocaleString('pt-BR', {
-    style: 'currency', currency: 'BRL'
-  });
+    const formatar = valor => valor.toLocaleString('pt-BR', {
+      style: 'currency', currency: 'BRL'
+    });
 
-  const formatarData = data => {
-    if (!data) return '-';
-    return new Date(data).toLocaleDateString('pt-BR');
-  };
+    const formatarData = data => {
+      if (!data) return '-';
+      return new Date(data).toLocaleDateString('pt-BR');
+    };
 
-  const dentroDoPeriodo = (data, inicio, fim) => {
-    const d = new Date(data);
-    const i = inicio ? new Date(inicio) : null;
-    const f = fim ? new Date(fim) : null;
-    return (!i || d >= i) && (!f || d <= f);
-  };
+    const dentroDoPeriodo = (data, inicio, fim) => {
+      const d = new Date(data);
+      const i = inicio ? new Date(inicio) : null;
+      const f = fim ? new Date(fim) : null;
+      return (!i || d >= i) && (!f || d <= f);
+    };
 
-  async function renderizar() {
-    vendas = await carregarDoFirestore("vendas");
-    const statusFiltro = filtroStatus.value;
-    const inicio = dataInicio.value;
-    const fim = dataFim.value;
-    tabela.innerHTML = '';
+    async function renderizar() {
+      vendas = await carregarDoFirestore("vendas");
+      const statusFiltro = filtroStatus.value;
+      const inicio = dataInicio.value;
+      const fim = dataFim.value;
+      tabela.innerHTML = '';
 
-    vendas.forEach((venda, i) => {
-      const total = parseFloat(venda.valor) * parseInt(venda.quantidade);
-      const tipoPagamento = venda.pagamento === 'aprazo' ? 'A prazo' : 'À vista';
+      vendas.forEach((venda, i) => {
+        const total = parseFloat(venda.valor) * parseInt(venda.quantidade);
+        const tipoPagamento = venda.pagamento === 'aprazo' ? 'A prazo' : 'À vista';
 
-      if (venda.pagamento === 'avista') {
-        const status = venda.status || 'em aberto';
-        if ((statusFiltro === 'todos' || statusFiltro === status) &&
-            dentroDoPeriodo(venda.data, inicio, fim)) {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${venda.cliente}</td>
-            <td>${venda.produto}</td>
-            <td>À vista</td>
-            <td>-</td>
-            <td>${formatar(total)}</td>
-            <td>${formatarData(venda.data)}</td>
-            <td>${status}</td>
-            <td>
-              <button onclick="baixarAvista('${venda.id}')" ${status === 'recebido' ? 'disabled' : ''}>
-                Dar Baixa
-              </button>
-            </td>
-          `;
-          tabela.appendChild(row);
-        }
-      }
-
-      if (venda.pagamento === 'aprazo') {
-        (venda.parcelasDetalhes || []).forEach((parcela, pIndex) => {
-          if ((statusFiltro === 'todos' || parcela.status === statusFiltro) &&
-              dentroDoPeriodo(parcela.vencimento, inicio, fim)) {
+        if (venda.pagamento === 'avista') {
+          const status = venda.status || 'em aberto';
+          if ((statusFiltro === 'todos' || statusFiltro === status) &&
+              dentroDoPeriodo(venda.data, inicio, fim)) {
             const row = document.createElement('tr');
             row.innerHTML = `
               <td>${venda.cliente}</td>
               <td>${venda.produto}</td>
-              <td>A prazo</td>
-              <td>${parcela.numero}/${venda.parcelasDetalhes.length}</td>
-              <td>${formatar(parcela.valor)}</td>
-              <td>${formatarData(parcela.vencimento)}</td>
-              <td>${parcela.status}</td>
+              <td>À vista</td>
+              <td>-</td>
+              <td>${formatar(total)}</td>
+              <td>${formatarData(venda.data)}</td>
+              <td>${status}</td>
               <td>
-                <button onclick="baixarParcela('${venda.id}', ${pIndex})" ${parcela.status === 'recebido' ? 'disabled' : ''}>
+                <button onclick="baixarAvista('${venda.id}')" ${status === 'recebido' ? 'disabled' : ''}>
                   Dar Baixa
                 </button>
               </td>
             `;
             tabela.appendChild(row);
           }
-        });
-      }
-    });
-  }
+        }
 
-  window.baixarAvista = async (vendaId) => {
-    await atualizarCampoDoFirestore("vendas", vendaId, { status: "recebido" });
+        if (venda.pagamento === 'aprazo') {
+          (venda.parcelasDetalhes || []).forEach((parcela, pIndex) => {
+            if ((statusFiltro === 'todos' || parcela.status === statusFiltro) &&
+                dentroDoPeriodo(parcela.vencimento, inicio, fim)) {
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                <td>${venda.cliente}</td>
+                <td>${venda.produto}</td>
+                <td>A prazo</td>
+                <td>${parcela.numero}/${venda.parcelasDetalhes.length}</td>
+                <td>${formatar(parcela.valor)}</td>
+                <td>${formatarData(parcela.vencimento)}</td>
+                <td>${parcela.status}</td>
+                <td>
+                  <button onclick="baixarParcela('${venda.id}', ${pIndex})" ${parcela.status === 'recebido' ? 'disabled' : ''}>
+                    Dar Baixa
+                  </button>
+                </td>
+              `;
+              tabela.appendChild(row);
+            }
+          });
+        }
+      });
+    }
+
+    window.baixarAvista = async (vendaId) => {
+      await atualizarCampoDoFirestore("vendas", vendaId, { status: "recebido" });
+      await renderizar();
+    };
+
+    window.baixarParcela = async (vendaId, parcelaIndex) => {
+      const venda = vendas.find(v => v.id === vendaId);
+      if (!venda || !venda.parcelasDetalhes) return;
+
+      const parcelasAtualizadas = [...venda.parcelasDetalhes];
+      parcelasAtualizadas[parcelaIndex].status = "recebido";
+
+      await atualizarCampoDoFirestore("vendas", vendaId, { parcelasDetalhes: parcelasAtualizadas });
+      await renderizar();
+    };
+
+    filtroStatus.addEventListener("change", renderizar);
+    dataInicio.addEventListener("change", renderizar);
+    dataFim.addEventListener("change", renderizar);
+
     await renderizar();
-  };
-
-  window.baixarParcela = async (vendaId, parcelaIndex) => {
-    const venda = vendas.find(v => v.id === vendaId);
-    if (!venda || !venda.parcelasDetalhes) return;
-
-    const parcelasAtualizadas = [...venda.parcelasDetalhes];
-    parcelasAtualizadas[parcelaIndex].status = "recebido";
-
-    await atualizarCampoDoFirestore("vendas", vendaId, { parcelasDetalhes: parcelasAtualizadas });
-    await renderizar();
-  };
-
-  filtroStatus.addEventListener("change", renderizar);
-  dataInicio.addEventListener("change", renderizar);
-  dataFim.addEventListener("change", renderizar);
-
-  await renderizar();
-</script>
+  </script>
 
 </body>
 </html>
