@@ -151,7 +151,7 @@
     }
 
     window.baixarAvista = async (vendaId) => {
-      await atualizarCampoDoFirestore("vendas", vendaId, { status: "recebido" });
+      await atualizarCampoFirestore("vendas", vendaId, { status: "recebido" });
       await renderizar();
     };
 
@@ -162,7 +162,7 @@
       const parcelasAtualizadas = [...venda.parcelasDetalhes];
       parcelasAtualizadas[parcelaIndex].status = "recebido";
 
-      await atualizarCampoDoFirestore("vendas", vendaId, { parcelasDetalhes: parcelasAtualizadas });
+      await atualizarCampoFirestore("vendas", vendaId, { parcelasDetalhes: parcelasAtualizadas });
       await renderizar();
     };
 
