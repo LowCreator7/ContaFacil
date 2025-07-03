@@ -92,6 +92,13 @@
     atualizarNoFirestore,
     removerDoFirestore
   } from './script-firebase.js';
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
+  const auth = getAuth();
+
+  let vendas = [];
+  let uid = null;
+  let editandoId = null;
 
   const form = document.getElementById("formVendas");
   const tabela = document.getElementById("tabelaVendas");
@@ -99,9 +106,6 @@
   const inputParcelas = document.getElementById("parcelas");
   const clienteSelect = document.getElementById("clienteSelect");
   const produtoSelect = document.getElementById("produtoSelect");
-
-  let vendas = [];
-  let editandoId = null;
 
   function formatarDataBR(dataISO) {
     return new Date(dataISO).toLocaleDateString('pt-BR');
@@ -151,11 +155,13 @@
       venda.parcelasDetalhes = gerarParcelas(total, parcelas, data);
     }
 
+    const caminho = `usuarios/${uid}/vendas`;
+
     if (editandoId) {
-      await atualizarNoFirestore("vendas", editandoId, venda);
+      await atualizarNoFirestore(caminho, editandoId, venda);
       editandoId = null;
     } else {
-      await salvarNoFirestore("vendas", venda);
+      await salvarNoFirestore(caminho, venda);
     }
 
     form.reset();
@@ -164,7 +170,8 @@
   });
 
   async function carregarVendas() {
-    vendas = await carregarDoFirestore("vendas");
+    const caminho = `usuarios/${uid}/vendas`;
+    vendas = await carregarDoFirestore(caminho);
     tabela.innerHTML = "";
     vendas.forEach(v => {
       const total = v.valor * v.quantidade;
@@ -201,7 +208,8 @@
   };
 
   window.excluirVenda = async (id) => {
-    await removerDoFirestore("vendas", id);
+    const caminho = `usuarios/${uid}/vendas`;
+    await removerDoFirestore(caminho, id);
     await carregarVendas();
   };
 
@@ -221,13 +229,15 @@
       alert("Preencha todos os campos.");
       return;
     }
-    await salvarNoFirestore("clientes", { nome, telefone });
+    const caminho = `usuarios/${uid}/clientes`;
+    await salvarNoFirestore(caminho, { nome, telefone });
     await atualizarListaClientes();
     fecharModalCliente();
   };
 
   async function atualizarListaClientes() {
-    const clientes = await carregarDoFirestore("clientes");
+    const caminho = `usuarios/${uid}/clientes`;
+    const clientes = await carregarDoFirestore(caminho);
     clienteSelect.innerHTML = '<option value="">Selecione um cliente</option>';
     clientes.forEach(c => {
       const opt = document.createElement("option");
@@ -238,7 +248,8 @@
   }
 
   async function atualizarListaProdutos() {
-    const compras = await carregarDoFirestore("compras");
+    const caminho = `usuarios/${uid}/compras`;
+    const compras = await carregarDoFirestore(caminho);
     const nomesProdutos = [...new Set(compras.map(c => c.produto).filter(Boolean))];
     produtoSelect.innerHTML = '<option value="">Selecione um produto</option>';
     nomesProdutos.forEach(nome => {
@@ -249,17 +260,22 @@
     });
   }
 
-  // Fechar modal com tecla ESC
   window.addEventListener("keydown", (e) => {
     if (e.key === "Escape") fecharModalCliente();
   });
 
-  // Inicialização
-  await atualizarListaClientes();
-  await atualizarListaProdutos();
-  await carregarVendas();
+  // Inicia após confirmar usuário logado
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      window.location.href = "login.html";
+      return;
+    }
+    uid = user.uid;
+    await atualizarListaClientes();
+    await atualizarListaProdutos();
+    await carregarVendas();
+  });
 </script>
-
 
 </body>
 </html>
