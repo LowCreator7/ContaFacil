@@ -64,12 +64,17 @@
 </main>
 
 <script type="module">
-  import { carregarDoFirestore, atualizarCampoFirestore } from './script-firebase.js';
+  import {
+    auth,
+    carregarDoFirestore,
+    atualizarCampoFirestore
+  } from './script-firebase.js';
 
   const tabela = document.getElementById('tabelaContasPagar');
   const filtroStatus = document.getElementById('filtroStatus');
   const dataInicio = document.getElementById('dataInicio');
   const dataFim = document.getElementById('dataFim');
+  let compras = [];
 
   function formatarDataBR(dataISO) {
     return new Date(dataISO).toLocaleDateString('pt-BR');
@@ -82,9 +87,10 @@
     return (!ini || d >= ini) && (!fi || d <= fi);
   }
 
-  let compras = [];
-
   async function renderizar() {
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+
     tabela.innerHTML = '';
     const filtro = filtroStatus.value;
     const inicio = dataInicio.value;
@@ -93,7 +99,7 @@
     let totalAberto = 0;
     let totalPago = 0;
 
-    compras = await carregarDoFirestore('compras');
+    compras = await carregarDoFirestore(`usuarios/${userId}/compras`);
 
     compras.forEach((compra) => {
       if (compra.pagamento === 'aprazo' && Array.isArray(compra.parcelasDetalhes)) {
@@ -167,22 +173,33 @@
   }
 
   window.baixarParcela = async (docId, parcelaIndex) => {
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+
     if (!confirm('Confirmar baixa desta parcela?')) return;
     const doc = compras.find(c => c.id === docId);
     if (!doc || !doc.parcelasDetalhes?.[parcelaIndex]) return;
     doc.parcelasDetalhes[parcelaIndex].status = 'pago';
-    await atualizarCampoFirestore('compras', docId, { parcelasDetalhes: doc.parcelasDetalhes });
+
+    await atualizarCampoFirestore(`usuarios/${userId}/compras`, docId, { parcelasDetalhes: doc.parcelasDetalhes });
     await renderizar();
   };
 
   window.baixarCompra = async (docId) => {
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+
     if (!confirm('Confirmar baixa desta compra?')) return;
-    await atualizarCampoFirestore('compras', docId, { status: 'pago' });
+    await atualizarCampoFirestore(`usuarios/${userId}/compras`, docId, { status: 'pago' });
     await renderizar();
   };
 
   filtroStatus.addEventListener('change', renderizar);
-  renderizar();
+
+  auth.onAuthStateChanged(user => {
+    if (user) renderizar();
+    else window.location.href = "login.html";
+  });
 </script>
 
 </body>
