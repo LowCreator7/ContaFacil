@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Contas a Pagar</title>
+  <link rel="stylesheet" href="estilo.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<aside class="sidebar">
+  <h2>📤 Contas a Pagar</h2>
+  <nav>
+    <a href="dashboard.html">🏠 Dashboard</a>
+    <a href="compras.html">🛒 Compras</a>
+    <a href="vendas.html">💰 Vendas</a>
+    <a href="produtos.html">📄 Produtos</a>
+    <a href="clientes.html">👤 Clientes</a>
+    <a href="fornecedores.html">🏭 Fornecedores</a>
+    <a href="contas-receber-simples.html">📥 Contas a Receber</a>
+    <a href="contas-pagar.html" class="active">📤 Contas a Pagar</a>
+    <a href="despesas.html">💸 Despesas</a>
+    <a href="estoque.html">📦 Estoque</a>
+    <a href="dre.html">📊 DRE</a>
+  </nav>
+</aside>
+
+<main class="main">
+  <h2>Contas a Pagar</h2>
+
+  <div style="margin-bottom: 15px;">
+    <label>Status:
+      <select id="filtroStatus">
+        <option value="todos">Todos</option>
+        <option value="em aberto">Em Aberto</option>
+        <option value="pago">Pago</option>
+      </select>
+    </label>
+    <label>De: <input type="date" id="dataInicio"></label>
+    <label>Até: <input type="date" id="dataFim"></label>
+    <button onclick="renderizar()">Filtrar</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Fornecedor</th>
+        <th>Produto</th>
+        <th>Total</th>
+        <th>Parcela</th>
+        <th>Vencimento</th>
+        <th>Status</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody id="tabelaContasPagar"></tbody>
+  </table>
+</main>
+
+<script type="module">
+  import { carregarDoFirestore, atualizarCampoFirestore } from './script-firebase.js';
+
+  const tabela = document.getElementById('tabelaContasPagar');
+  const filtroStatus = document.getElementById('filtroStatus');
+  const dataInicio = document.getElementById('dataInicio');
+  const dataFim = document.getElementById('dataFim');
+
+  function formatarDataBR(dataISO) {
+    return new Date(dataISO).toLocaleDateString('pt-BR');
+  }
+
+  function dentroDoPeriodo(data, inicio, fim) {
+    const d = new Date(data);
+    const ini = inicio ? new Date(inicio) : null;
+    const fi = fim ? new Date(fim) : null;
+    return (!ini || d >= ini) && (!fi || d <= fi);
+  }
+
+  let compras = [];
+
+  async function renderizar() {
+    tabela.innerHTML = '';
+    const filtro = filtroStatus.value;
+    const inicio = dataInicio.value;
+    const fim = dataFim.value;
+
+    compras = await carregarDoFirestore('compras');
+
+    compras.forEach((compra, i) => {
+      if (compra.pagamento === 'aprazo' && Array.isArray(compra.parcelasDetalhes)) {
+        compra.parcelasDetalhes.forEach((parcela, pIndex) => {
+          if (filtro !== 'todos' && parcela.status !== filtro) return;
+          if (!dentroDoPeriodo(parcela.vencimento, inicio, fim)) return;
+
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${formatarDataBR(compra.data)}</td>
+            <td>${compra.fornecedor || '-'}</td>
+            <td>${compra.produto}</td>
+            <td>R$ ${parcela.valor.toFixed(2)}</td>
+            <td>${parcela.numero}/${compra.parcelasDetalhes.length}</td>
+            <td>${formatarDataBR(parcela.vencimento)}</td>
+            <td>${parcela.status}</td>
+            <td>
+              <button onclick="baixarParcela('${compra.id}', ${pIndex})" ${parcela.status === 'pago' ? 'disabled' : ''}>
+                Dar Baixa
+              </button>
+            </td>
+          `;
+          tabela.appendChild(row);
+        });
+      } else {
+        if (filtro !== 'todos' && (compra.status || 'em aberto') !== filtro) return;
+        if (!dentroDoPeriodo(compra.data, inicio, fim)) return;
+
+        const total = parseFloat(compra.valor) * parseInt(compra.quantidade || 1);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${formatarDataBR(compra.data)}</td>
+          <td>${compra.fornecedor || '-'}</td>
+          <td>${compra.produto}</td>
+          <td>R$ ${parseFloat(compra.valor).toFixed(2)}</td>
+          <td>-</td>
+          <td>${formatarDataBR(compra.data)}</td>
+          <td>${compra.status || 'em aberto'}</td>
+          <td>
+            <button onclick="baixarCompra('${compra.id}')" ${compra.status === 'pago' ? 'disabled' : ''}>
+              Dar Baixa
+            </button>
+          </td>
+        `;
+        tabela.appendChild(row);
+      }
+    });
+  }
+
+  // Atualização Firebase
+  window.baixarParcela = async (docId, parcelaIndex) => {
+    if (!confirm('Confirmar baixa desta parcela?')) return;
+    const doc = compras.find(c => c.id === docId);
+    if (!doc || !doc.parcelasDetalhes?.[parcelaIndex]) return;
+    doc.parcelasDetalhes[parcelaIndex].status = 'pago';
+    await atualizarCampoFirestore('compras', docId, { parcelasDetalhes: doc.parcelasDetalhes });
+    await renderizar();
+  };
+
+  window.baixarCompra = async (docId) => {
+    if (!confirm('Confirmar baixa desta compra?')) return;
+    await atualizarCampoFirestore('compras', docId, { status: 'pago' });
+    await renderizar();
+  };
+
+  filtroStatus.addEventListener('change', renderizar);
+  renderizar();
+</script>
+
+</body>
+</html>

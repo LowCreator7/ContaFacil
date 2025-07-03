@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Clientes</title>
+  <link rel="stylesheet" href="estilo.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <aside class="sidebar">
+    <h2>👤 Clientes</h2>
+    <nav>
+      <a href="dashboard.html">🏠 Dashboard</a>
+      <a href="compras.html">🛒 Compras</a>
+      <a href="vendas.html">💰 Vendas</a>
+      <a href="produtos.html">📄 Produtos</a>
+      <a href="clientes.html" class="active">👤 Clientes</a>
+      <a href="fornecedores.html">🏭 Fornecedores</a>
+      <a href="contas-receber-simples.html">📥 Contas a Receber</a>
+      <a href="contas-pagar.html">📤 Contas a Pagar</a>
+      <a href="despesas.html">💸 Despesas</a>
+      <a href="estoque.html">📦 Estoque</a>
+      <a href="DRE.html">📊 DRE</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <h2>Clientes Cadastrados</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Telefone</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaClientes"></tbody>
+    </table>
+  </main>
+
+  <script type="module">
+    import { carregarDoFirestore } from './script-firebase.js';
+
+    const tabela = document.getElementById("tabelaClientes");
+
+    async function carregarClientes() {
+      const clientes = await carregarDoFirestore("clientes");
+
+      clientes.forEach(c => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${c.nome}</td>
+          <td>${c.telefone}</td>
+        `;
+        tabela.appendChild(row);
+      });
+    }
+
+    carregarClientes();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>DRE Analítica</title>
+  <link rel="stylesheet" href="estilo.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <h2>📊 Financeiro</h2>
+    <nav>
+      <a href="dashboard.html">🏠 Dashboard</a>
+      <a href="compras.html">🛒 Compras</a>
+      <a href="vendas.html">💰 Vendas</a>
+      <a href="produtos.html">📄 Produtos</a>
+      <a href="clientes.html">👤 Clientes</a>
+      <a href="fornecedores.html">🏭 Fornecedores</a>
+      <a href="contas-receber-simples.html">📥 Contas a Receber</a>
+      <a href="contas-pagar.html">📤 Contas a Pagar</a>
+      <a href="despesas.html">💸 Despesas</a>
+      <a href="estoque.html">📦 Estoque</a>
+      <a href="dre.html">📊 DRE</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <h2>DRE Analítica</h2>
+
+    <div class="filtros">
+      <label>De: <input type="date" id="dataInicio"></label>
+      <label>Até: <input type="date" id="dataFim"></label>
+      <button onclick="gerarDRE()">Gerar DRE</button>
+    </div>
+
+    <table id="dreTabela">
+      <thead>
+        <tr><th>Categoria</th><th>Valor</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+  </main>
+
+  <script type="module">
+  import { carregarDoFirestore } from './script-firebase.js';
+
+  function formatar(valor) {
+    return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  function gerarDRE() {
+    const inicio = new Date(document.getElementById('dataInicio').value);
+    const fim = new Date(document.getElementById('dataFim').value);
+
+    Promise.all([
+      carregarDoFirestore('compras'),
+      carregarDoFirestore('vendas'),
+      carregarDoFirestore('despesas')
+    ]).then(([compras, vendas, despesas]) => {
+      let estoqueInicial = 0, estoqueFinal = 0, totalCompras = 0, totalVendas = 0, totalDespesas = 0;
+      const categoriasDespesas = {};
+
+      // COMPRAS
+      compras.forEach(c => {
+        const d = new Date(c.data);
+        const valorTotal = (parseFloat(c.valor) || 0) * (parseInt(c.quantidade) || 1);
+        if (d < inicio) estoqueInicial += valorTotal;
+        if (d >= inicio && d <= fim) totalCompras += valorTotal;
+        if (d > fim) estoqueFinal += valorTotal;
+      });
+
+      // VENDAS
+      vendas.forEach(v => {
+        const d = new Date(v.data);
+        const valorTotal = (parseFloat(v.valor) || 0) * (parseInt(v.quantidade) || 1);
+        if (d >= inicio && d <= fim) totalVendas += valorTotal;
+      });
+
+      // DESPESAS
+      despesas.forEach(d => {
+        const dt = new Date(d.data);
+        const valor = parseFloat(d.valor) || 0;
+        if (dt >= inicio && dt <= fim) {
+          totalDespesas += valor;
+          categoriasDespesas[d.categoria] = (categoriasDespesas[d.categoria] || 0) + valor;
+        }
+      });
+
+      const CMV = estoqueInicial + totalCompras - estoqueFinal;
+      const resultadoBruto = totalVendas - CMV;
+      const resultadoLiquido = resultadoBruto - totalDespesas;
+
+      const tbody = document.querySelector("#dreTabela tbody");
+      tbody.innerHTML = `
+        <tr class="subtotal"><td>Receita de Vendas</td><td>${formatar(totalVendas)}</td></tr>
+        <tr><td>Estoque Inicial</td><td>${formatar(estoqueInicial)}</td></tr>
+        <tr><td>Compras</td><td>${formatar(totalCompras)}</td></tr>
+        <tr><td>Estoque Final</td><td>${formatar(estoqueFinal)}</td></tr>
+        <tr class="subtotal"><td>CMV</td><td>${formatar(CMV)}</td></tr>
+        <tr class="subtotal"><td>Resultado Bruto</td><td>${formatar(resultadoBruto)}</td></tr>
+        <tr class="subtotal"><td>Despesas Operacionais</td><td>${formatar(totalDespesas)}</td></tr>
+      `;
+
+      for (const categoria in categoriasDespesas) {
+        tbody.innerHTML += `<tr><td>- ${categoria}</td><td>${formatar(categoriasDespesas[categoria])}</td></tr>`;
+      }
+
+      tbody.innerHTML += `<tr class="subtotal"><td>Lucro/Prejuízo Líquido</td><td>${formatar(resultadoLiquido)}</td></tr>`;
+    });
+  }
+
+  window.gerarDRE = gerarDRE;
+</script>
+</body>
+</html>

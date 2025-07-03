@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Despesas</title>
+  <link rel="stylesheet" href="estilo.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <h2>📌 Despesas</h2>
+    <nav>
+      <a href="dashboard.html">🏠 Dashboard</a>
+      <a href="compras.html">🛒 Compras</a>
+      <a href="vendas.html">💰 Vendas</a>
+      <a href="produtos.html">📄 Produtos</a>
+      <a href="clientes.html">👤 Clientes</a>
+      <a href="fornecedores.html">🏭 Fornecedores</a>
+      <a href="contas-receber-simples.html">📥 Contas a Receber</a>
+      <a href="contas-pagar.html">📤 Contas a Pagar</a>
+      <a href="despesas.html">💸 Despesas</a>
+      <a href="estoque.html">📦 Estoque</a>
+      <a href="dre.html">📊 DRE</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <h2>Lançamento de Despesas</h2>
+
+    <form id="formDespesas">
+      <input type="date" id="data" required>
+      <input type="text" id="descricao" placeholder="Descrição da Despesa" required>
+      <input type="number" id="valor" placeholder="Valor (R$)" required>
+      <select id="categoria" required>
+        <option value="">Categoria</option>
+        <option>Aluguel</option>
+        <option>Energia</option>
+        <option>Internet</option>
+        <option>Impostos</option>
+        <option>Outros</option>
+      </select>
+      <button type="submit">Salvar</button>
+    </form>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Descrição</th>
+          <th>Categoria</th>
+          <th>Valor</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaDespesas"></tbody>
+    </table>
+  </main>
+
+  <script type="module">
+  import {
+    carregarDoFirestore,
+    salvarNoFirestore,
+    removerDoFirestore
+  } from './script-firebase.js';
+
+  const form = document.getElementById('formDespesas');
+  const tabela = document.getElementById('tabelaDespesas');
+
+  let despesas = [];
+
+  function formatarDataBR(dataISO) {
+    return new Date(dataISO).toLocaleDateString('pt-BR');
+  }
+
+  async function renderizar() {
+    despesas = await carregarDoFirestore("despesas");
+    tabela.innerHTML = '';
+    despesas.forEach(d => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${formatarDataBR(d.data)}</td>
+        <td>${d.descricao}</td>
+        <td>${d.categoria}</td>
+        <td>R$ ${parseFloat(d.valor).toFixed(2)}</td>
+        <td>
+          <button class="btn excluir" onclick="excluirDespesa('${d.id}')">Excluir</button>
+        </td>
+      `;
+      tabela.appendChild(row);
+    });
+  }
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const data = document.getElementById('data').value;
+    const descricao = document.getElementById('descricao').value;
+    const valor = parseFloat(document.getElementById('valor').value);
+    const categoria = document.getElementById('categoria').value;
+
+    await salvarNoFirestore("despesas", { data, descricao, valor, categoria });
+    form.reset();
+    await renderizar();
+  });
+
+  window.excluirDespesa = async (id) => {
+    await removerDoFirestore("despesas", id);
+    await renderizar();
+  };
+
+  await renderizar();
+</script>
+
+</body>
+</html>

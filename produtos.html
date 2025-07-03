@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Produtos</title>
+  <link rel="stylesheet" href="estilo.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <h2>📦 Produtos</h2>
+    <nav>
+      <a href="dashboard.html">🏠 Dashboard</a>
+      <a href="compras.html">🛒 Compras</a>
+      <a href="vendas.html">💰 Vendas</a>
+      <a href="produtos.html" class="active">📄 Produtos</a>
+      <a href="clientes.html">👤 Clientes</a>
+      <a href="fornecedores.html">🏭 Fornecedores</a>
+      <a href="contas-receber-simples.html">📥 Contas a Receber</a>
+      <a href="contas-pagar.html">📤 Contas a Pagar</a>
+      <a href="despesas.html">💸 Despesas</a>
+      <a href="estoque.html">📦 Estoque</a>
+      <a href="DRE.html">📊 DRE</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <h2>Produtos Cadastrados (via Compras)</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Quantidade Comprada</th>
+          <th>Valor Médio (R$)</th>
+          <th>% Lucro</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaProdutos"></tbody>
+    </table>
+  </main>
+
+  <script type="module">
+    import { carregarDoFirestore } from './script-firebase.js';
+
+    const tabela = document.getElementById("tabelaProdutos");
+
+    async function carregarProdutos() {
+      const compras = await carregarDoFirestore("compras");
+      const produtos = {};
+
+      compras.forEach(c => {
+        const nome = c.produto;
+        if (!produtos[nome]) {
+          produtos[nome] = {
+            total: 0,
+            quantidade: 0,
+            lucro: c.porcentagemLucro || 0
+          };
+        }
+
+        produtos[nome].quantidade += c.quantidade;
+        produtos[nome].total += c.valor * c.quantidade;
+        produtos[nome].lucro = c.porcentagemLucro || produtos[nome].lucro;
+      });
+
+      Object.entries(produtos).forEach(([nome, p]) => {
+        const media = p.quantidade ? (p.total / p.quantidade) : 0;
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${nome}</td>
+          <td>${p.quantidade}</td>
+          <td>R$ ${media.toFixed(2)}</td>
+          <td>${p.lucro}%</td>
+        `;
+        tabela.appendChild(row);
+      });
+    }
+
+    carregarProdutos();
+  </script>
+</body>
+</html>

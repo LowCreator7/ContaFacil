@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Compras</title>
+  <link rel="stylesheet" href="estilo.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <aside class="sidebar">
+    <h2>🛒 Compras</h2>
+    <nav>
+      <a href="dashboard.html">🏠 Dashboard</a>
+      <a href="compras.html" class="active">🛒 Compras</a>
+      <a href="vendas.html">💰 Vendas</a>
+      <a href="produtos.html">📄 Produtos</a>
+      <a href="clientes.html">👤 Clientes</a>
+      <a href="fornecedores.html">🏭 Fornecedores</a>
+      <a href="contas-receber-simples.html">📥 Contas a Receber</a>
+      <a href="contas-pagar.html">📤 Contas a Pagar</a>
+      <a href="despesas.html">💸 Despesas</a>
+      <a href="estoque.html">📦 Estoque</a>
+      <a href="dre.html">📊 DRE</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <h2>Registro de Compras</h2>
+
+    <form id="formCompras">
+      <input type="date" id="data" required>
+
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <select id="fornecedorSelect" required style="flex: 1;">
+          <option value="">Selecione um fornecedor</option>
+        </select>
+        <button type="button" onclick="abrirModalFornecedor()">+ Novo Fornecedor</button>
+      </div>
+
+      <input type="text" id="produto" placeholder="Produto" required>
+      <input type="number" id="quantidade" placeholder="Qtd" required>
+      <input type="number" id="valor" placeholder="Valor Unitário (R$)" required>
+
+      <select id="pagamento" required>
+        <option value="">Forma de pagamento</option>
+        <option value="avista">À vista</option>
+        <option value="aprazo">A prazo</option>
+      </select>
+
+      <input type="number" id="parcelas" placeholder="Parcelas" style="display:none;">
+      <button type="submit">Salvar</button>
+    </form>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Fornecedor</th>
+          <th>Produto</th>
+          <th>Qtd</th>
+          <th>Valor Unit.</th>
+          <th>Pagamento</th>
+          <th>Total</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaCompras"></tbody>
+    </table>
+  </main>
+
+  <!-- Modal Fornecedor -->
+  <div id="modalFornecedor" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%);
+    background:#fff; padding:20px; box-shadow:0 0 10px rgba(0,0,0,0.3); border-radius:10px; z-index:999;">
+    <h3>Novo Fornecedor</h3>
+    <input type="text" id="novoFornecedor" placeholder="Nome" required><br><br>
+    <input type="text" id="novoTelefoneFornecedor" placeholder="Telefone"><br><br>
+    <button onclick="salvarNovoFornecedor()">Salvar</button>
+    <button onclick="fecharModalFornecedor()">Cancelar</button>
+  </div>
+
+  <script type="module">
+  import {
+    carregarDoFirestore,
+    salvarNoFirestore,
+    atualizarNoFirestore,
+    removerDoFirestore
+  } from './script-firebase.js';
+
+  const form = document.getElementById("formCompras");
+  const tabela = document.getElementById("tabelaCompras");
+  const selectPagamento = document.getElementById("pagamento");
+  const inputParcelas = document.getElementById("parcelas");
+  const fornecedorSelect = document.getElementById("fornecedorSelect");
+
+  let compras = [];
+  let fornecedores = [];
+  let editandoId = null;
+
+  function formatarDataBR(dataISO) {
+    return new Date(dataISO).toLocaleDateString('pt-BR');
+  }
+
+  selectPagamento.addEventListener("change", () => {
+    inputParcelas.style.display = selectPagamento.value === "aprazo" ? "inline" : "none";
+  });
+
+  function gerarParcelas(valorTotal, numParcelas, dataCompra) {
+    const parcelas = [];
+    const valorParcela = parseFloat((valorTotal / numParcelas).toFixed(2));
+    for (let i = 0; i < numParcelas; i++) {
+      const vencimento = new Date(dataCompra);
+      vencimento.setMonth(vencimento.getMonth() + i + 1);
+      parcelas.push({
+        numero: i + 1,
+        valor: valorParcela,
+        status: "em aberto",
+        vencimento: vencimento.toISOString().split("T")[0]
+      });
+    }
+    return parcelas;
+  }
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const data = document.getElementById("data").value;
+    const fornecedor = fornecedorSelect.value;
+    const produto = document.getElementById("produto").value;
+    const quantidade = parseInt(document.getElementById("quantidade").value);
+    const valor = parseFloat(document.getElementById("valor").value);
+    const pagamento = selectPagamento.value;
+    const parcelas = pagamento === "aprazo" ? parseInt(inputParcelas.value) || 1 : 1;
+
+    const compra = { data, fornecedor, produto, quantidade, valor, pagamento };
+
+    if (pagamento === "aprazo") {
+      const total = quantidade * valor;
+      compra.parcelas = parcelas;
+      compra.parcelasDetalhes = gerarParcelas(total, parcelas, data);
+    }
+
+    if (editandoId) {
+      await atualizarNoFirestore("compras", editandoId, compra);
+      editandoId = null;
+    } else {
+      await salvarNoFirestore("compras", compra);
+    }
+
+    form.reset();
+    inputParcelas.style.display = "none";
+    await carregarCompras();
+  });
+
+  async function carregarCompras() {
+    compras = await carregarDoFirestore("compras");
+    tabela.innerHTML = "";
+    compras.forEach((c, i) => {
+      const total = c.valor * c.quantidade;
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${formatarDataBR(c.data)}</td>
+        <td>${c.fornecedor}</td>
+        <td>${c.produto}</td>
+        <td>${c.quantidade}</td>
+        <td>R$ ${c.valor.toFixed(2)}</td>
+        <td>${c.pagamento}</td>
+        <td>R$ ${total.toFixed(2)}</td>
+        <td>
+          <button class="btn editar" onclick="editarCompra('${c.id}')">Editar</button>
+          <button class="btn excluir" onclick="excluirCompra('${c.id}')">Excluir</button>
+        </td>
+      `;
+      tabela.appendChild(row);
+    });
+  }
+
+  window.editarCompra = (id) => {
+    const compra = compras.find(c => c.id === id);
+    if (!compra) return;
+    document.getElementById("data").value = compra.data;
+    fornecedorSelect.value = compra.fornecedor;
+    document.getElementById("produto").value = compra.produto;
+    document.getElementById("quantidade").value = compra.quantidade;
+    document.getElementById("valor").value = compra.valor;
+    document.getElementById("pagamento").value = compra.pagamento;
+    inputParcelas.style.display = compra.pagamento === "aprazo" ? "inline" : "none";
+    document.getElementById("parcelas").value = compra.parcelas || "";
+    editandoId = id;
+  };
+
+  window.excluirCompra = async (id) => {
+    await removerDoFirestore("compras", id);
+    await carregarCompras();
+  };
+
+  // FORNECEDORES
+  async function carregarFornecedores() {
+    fornecedores = await carregarDoFirestore("fornecedores");
+    fornecedorSelect.innerHTML = '<option value="">Selecione um fornecedor</option>';
+    fornecedores.forEach(f => {
+      const opt = document.createElement("option");
+      opt.value = f.nome;
+      opt.textContent = `${f.nome} - ${f.telefone || ""}`;
+      fornecedorSelect.appendChild(opt);
+    });
+  }
+
+  window.abrirModalFornecedor = () => {
+    document.getElementById("modalFornecedor").style.display = "block";
+  };
+
+  window.fecharModalFornecedor = () => {
+    document.getElementById("modalFornecedor").style.display = "none";
+    document.getElementById("novoFornecedor").value = "";
+    document.getElementById("novoTelefoneFornecedor").value = "";
+  };
+
+  window.salvarNovoFornecedor = async () => {
+    const nome = document.getElementById("novoFornecedor").value.trim();
+    const telefone = document.getElementById("novoTelefoneFornecedor").value.trim();
+    if (!nome) {
+      alert("Informe o nome do fornecedor.");
+      return;
+    }
+    await salvarNoFirestore("fornecedores", { nome, telefone });
+    await carregarFornecedores();
+    fecharModalFornecedor();
+  };
+
+  await carregarFornecedores();
+  await carregarCompras();
+</script>
+
+</body>
+</html>

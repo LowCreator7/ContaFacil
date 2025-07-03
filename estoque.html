@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Controle de Estoque</title>
+  <link rel="stylesheet" href="estilo.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <h2>📦 Estoque</h2>
+    <nav>
+      <a href="dashboard.html">🏠 Dashboard</a>
+      <a href="compras.html">🛒 Compras</a>
+      <a href="vendas.html">💰 Vendas</a>
+      <a href="produtos.html">📄 Produtos</a>
+      <a href="clientes.html">👤 Clientes</a>
+      <a href="fornecedores.html">🏭 Fornecedores</a>
+      <a href="contas-receber-simples.html">📥 Contas a Receber</a>
+      <a href="contas-pagar.html">📤 Contas a Pagar</a>
+      <a href="despesas.html">💸 Despesas</a>
+      <a href="estoque.html" class="active">📦 Estoque</a>
+      <a href="DRE.html">📊 DRE</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <h2>Controle de Estoque</h2>
+
+    <div class="filtro">
+      <label for="filtroEstoque"><strong>Filtrar produtos com estoque menor ou igual a:</strong></label>
+      <br><br>
+      <input type="number" id="filtroEstoque" placeholder="Ex: 5" oninput="renderizarEstoque()">
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Comprado</th>
+          <th>Vendido</th>
+          <th>Em Estoque</th>
+          <th>Valor Compra (R$)</th>
+          <th>Valor Venda (R$)</th>
+          <th>Lucro Estimado (R$)</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaEstoque"></tbody>
+    </table>
+  </main>
+
+  <script type="module">
+    import { carregarDoFirestore } from './script-firebase.js';
+
+    const tabelaEstoque = document.getElementById("tabelaEstoque");
+    const filtroEstoque = document.getElementById("filtroEstoque");
+
+    let compras = [];
+    let vendas = [];
+
+    async function carregarDados() {
+      compras = await carregarDoFirestore("compras");
+      vendas = await carregarDoFirestore("vendas");
+      renderizarEstoque();
+    }
+
+    function renderizarEstoque() {
+      tabelaEstoque.innerHTML = "";
+
+      const produtos = {};
+
+      compras.forEach(compra => {
+        const nome = compra.produto;
+        if (!produtos[nome]) {
+          produtos[nome] = {
+            comprado: 0,
+            vendido: 0,
+            valorCompra: compra.valor,
+            valorVenda: 0
+          };
+        }
+        produtos[nome].comprado += compra.quantidade;
+        produtos[nome].valorCompra = compra.valor;
+        if (compra.porcentagemLucro) {
+          produtos[nome].valorVenda = compra.valor + (compra.valor * (compra.porcentagemLucro / 100));
+        }
+      });
+
+      vendas.forEach(venda => {
+        const nome = venda.produto;
+        if (!produtos[nome]) {
+          produtos[nome] = {
+            comprado: 0,
+            vendido: 0,
+            valorCompra: 0,
+            valorVenda: venda.valor
+          };
+        }
+        produtos[nome].vendido += venda.quantidade;
+        produtos[nome].valorVenda = venda.valor;
+      });
+
+      const filtroValor = parseInt(filtroEstoque.value);
+
+      Object.keys(produtos).forEach(nome => {
+        const p = produtos[nome];
+        const estoque = p.comprado - p.vendido;
+        const lucroEstimado = (p.valorVenda - p.valorCompra) * estoque;
+
+        if (!isNaN(filtroValor) && estoque > filtroValor) return;
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${nome}</td>
+          <td>${p.comprado}</td>
+          <td>${p.vendido}</td>
+          <td>${estoque}</td>
+          <td>R$ ${p.valorCompra.toFixed(2)}</td>
+          <td>R$ ${p.valorVenda.toFixed(2)}</td>
+          <td>R$ ${lucroEstimado.toFixed(2)}</td>
+        `;
+        tabelaEstoque.appendChild(row);
+      });
+    }
+
+    carregarDados();
+  </script>
+</body>
+</html>
