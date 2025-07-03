@@ -128,6 +128,7 @@
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+
     const data = document.getElementById("data").value;
     const cliente = clienteSelect.value;
     const produto = produtoSelect.value;
@@ -135,6 +136,11 @@
     const valor = parseFloat(document.getElementById("valor").value);
     const pagamento = selectPagamento.value;
     const parcelas = pagamento === "aprazo" ? parseInt(inputParcelas.value) || 1 : 1;
+
+    if (!data || !cliente || !produto || !quantidade || !valor || !pagamento) {
+      alert("Preencha todos os campos obrigatórios.");
+      return;
+    }
 
     let venda = { data, cliente, produto, quantidade, valor, pagamento };
 
@@ -198,13 +204,11 @@
     await carregarVendas();
   };
 
-  // CLIENTES
-  window.abrirModalCliente = () => {
-    document.getElementById("modalCliente").style.display = "block";
-  };
-
+  // Modal Cliente
+  const modalCliente = document.getElementById("modalCliente");
+  window.abrirModalCliente = () => modalCliente.style.display = "block";
   window.fecharModalCliente = () => {
-    document.getElementById("modalCliente").style.display = "none";
+    modalCliente.style.display = "none";
     document.getElementById("novoNome").value = "";
     document.getElementById("novoTelefone").value = "";
   };
@@ -244,6 +248,12 @@
     });
   }
 
+  // Fechar modal com tecla ESC
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") fecharModalCliente();
+  });
+
+  // Inicialização
   await atualizarListaClientes();
   await atualizarListaProdutos();
   await carregarVendas();
