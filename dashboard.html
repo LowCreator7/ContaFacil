@@ -111,7 +111,8 @@
         }
       });
     } else {
-      if (compra.status === 'em aberto') {
+      const status = compra.status || 'em aberto';
+      if (status === 'em aberto') {
         const valorTotal = (parseFloat(compra.valor) || 0) * (parseInt(compra.quantidade) || 1);
         contasPagar.push({ data: compra.data, valor: valorTotal, status: 'em aberto' });
         totalPagar += valorTotal;
