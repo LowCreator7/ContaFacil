@@ -40,25 +40,34 @@
   </main>
 
   <script type="module">
-    import { carregarDoFirestore } from './script-firebase.js';
+  import { auth, carregarDoFirestore } from './script-firebase.js';
 
-    const tabela = document.getElementById("tabelaFornecedores");
+  const tabela = document.getElementById("tabelaFornecedores");
 
-    async function carregarFornecedores() {
-      const fornecedores = await carregarDoFirestore("fornecedores");
-
-      fornecedores.forEach(f => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${f.nome}</td>
-          <td>${f.telefone || '-'}</td>
-        `;
-        tabela.appendChild(row);
-      });
+  async function carregarFornecedores() {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("Usuário não autenticado.");
+      return;
     }
 
-    carregarFornecedores();
-  </script>
+    const base = `usuarios/${user.uid}/fornecedores`;
+    const fornecedores = await carregarDoFirestore(base);
+
+    tabela.innerHTML = "";
+
+    fornecedores.forEach(f => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${f.nome}</td>
+        <td>${f.telefone || '-'}</td>
+      `;
+      tabela.appendChild(row);
+    });
+  }
+
+  carregarFornecedores();
+</script>
 
 </body>
 </html>
