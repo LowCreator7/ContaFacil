@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Meu Perfil</title>
+  <link rel="stylesheet" href="estilo.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <script type="module">
+    import { auth } from './firebase-auth.js';
+    import { signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
+    const nomeElem = document.getElementById("nomeUsuario");
+    const emailElem = document.getElementById("emailUsuario");
+    const nomeInput = document.getElementById("editarNome");
+    const btnSalvar = document.getElementById("salvarNome");
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        nomeElem.textContent = user.displayName || 'Sem nome definido';
+        emailElem.textContent = user.email;
+        nomeInput.value = user.displayName || '';
+
+        btnSalvar.onclick = async () => {
+          const novoNome = nomeInput.value.trim();
+          if (novoNome) {
+            await updateProfile(user, { displayName: novoNome });
+            alert("Nome atualizado com sucesso!");
+            nomeElem.textContent = novoNome;
+          }
+        };
+      } else {
+        window.location.href = "login.html";
+      }
+    });
+
+    window.logout = async () => {
+      await signOut(auth);
+      window.location.href = "login.html";
+    };
+  </script>
+</head>
+<body>
+  <aside class="sidebar">
+    <h2>👤 Meu Perfil</h2>
+    <nav>
+      <a href="perfil.html" class="active">⚙️ Meu Perfil</a>
+      <a href="dashboard.html">🏠 Dashboard</a>
+      <a href="compras.html">🛒 Compras</a>
+      <a href="vendas.html">💰 Vendas</a>
+      <a href="produtos.html">📄 Produtos</a>
+      <a href="clientes.html">👤 Clientes</a>
+      <a href="fornecedores.html">🏭 Fornecedores</a>
+      <a href="contas-receber-simples.html">📥 Contas a Receber</a>
+      <a href="contas-pagar.html">📤 Contas a Pagar</a>
+      <a href="despesas.html">💸 Despesas</a>
+      <a href="estoque.html">📦 Estoque</a>
+      <a href="dre.html">📊 DRE</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <h2>Meu Perfil</h2>
+    <p><strong>Nome:</strong> <span id="nomeUsuario">Carregando...</span></p>
+    <p><strong>Email:</strong> <span id="emailUsuario">Carregando...</span></p>
+
+    <h3>Editar Nome</h3>
+    <input type="text" id="editarNome" placeholder="Digite seu nome">
+    <button id="salvarNome">Salvar</button>
+
+    <hr>
+    <button onclick="logout()" style="background-color:#e74c3c; color:white; padding:10px 20px; border:none; border-radius:5px;">Logout</button>
+  </main>
+</body>
+</html>
