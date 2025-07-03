@@ -124,23 +124,53 @@
   totalReceberElem.textContent = formatar(totalReceber);
   contasPagarElem.textContent = formatar(totalPagar);
 
-  // GRÁFICO - Vendas por Cliente
-  new Chart(document.getElementById('vendasClientes'), {
-    type: 'bar',
-    data: {
-      labels: Object.keys(vendasPorCliente),
-      datasets: [{
-        label: 'Vendas (R$)',
-        data: Object.values(vendasPorCliente),
-        backgroundColor: '#40E0D0'
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true } }
+  // Agrupar faturamento por mês
+function agruparVendasPorMes(vendas) {
+  const resultado = {};
+  vendas.forEach(v => {
+    const total = parseFloat(v.valor) * parseInt(v.quantidade);
+    const mes = v.data?.slice(0, 7);
+    if (mes) {
+      resultado[mes] = (resultado[mes] || 0) + total;
     }
   });
+  return resultado;
+}
+
+const vendasMensais = agruparVendasPorMes(vendas);
+const mesesVendas = Object.keys(vendasMensais).sort();
+
+// GRÁFICO - Faturamento Mensal
+new Chart(document.getElementById('vendasClientes'), {
+  type: 'bar',
+  data: {
+    labels: mesesVendas,
+    datasets: [{
+      label: 'Faturamento (R$)',
+      data: mesesVendas.map(m => vendasMensais[m]),
+      backgroundColor: '#4CAF50'
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: context => formatar(context.raw)
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: value => formatar(value)
+        }
+      }
+    }
+  }
+});
 
   // Agrupamento por mês
   function agruparPorMes(array) {
