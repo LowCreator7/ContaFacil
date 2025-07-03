@@ -12,7 +12,7 @@
   <aside class="sidebar">
     <h2>👤 Clientes</h2>
     <nav>
-      <a href="perfil.html" class="active">⚙️ Meu Perfil</a>
+      <a href="perfil.html">⚙️ Meu Perfil</a>
       <a href="dashboard.html">🏠 Dashboard</a>
       <a href="compras.html">🛒 Compras</a>
       <a href="vendas.html">💰 Vendas</a>
@@ -54,6 +54,7 @@
 
   <script type="module">
     import {
+      auth,
       carregarDoFirestore,
       salvarNoFirestore
     } from './script-firebase.js';
@@ -62,7 +63,10 @@
 
     async function carregarClientes() {
       tabela.innerHTML = "";
-      const clientes = await carregarDoFirestore("clientes");
+      const userId = auth.currentUser?.uid;
+      if (!userId) return;
+
+      const clientes = await carregarDoFirestore(`usuarios/${userId}/clientes`);
       clientes.forEach(c => {
         const row = document.createElement("tr");
         row.innerHTML = `
@@ -86,11 +90,12 @@
     async function salvarNovoCliente() {
       const nome = document.getElementById("novoCliente").value.trim();
       const telefone = document.getElementById("novoTelefoneCliente").value.trim();
-      if (!nome) {
+      const userId = auth.currentUser?.uid;
+      if (!userId || !nome) {
         alert("Informe o nome do cliente.");
         return;
       }
-      await salvarNoFirestore("clientes", { nome, telefone });
+      await salvarNoFirestore(`usuarios/${userId}/clientes`, { nome, telefone });
       await carregarClientes();
       fecharModalCliente();
     }
@@ -101,7 +106,13 @@
     document.getElementById("btnSalvarCliente").addEventListener("click", salvarNovoCliente);
 
     // Inicialização
-    carregarClientes();
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        carregarClientes();
+      } else {
+        window.location.href = "login.html";
+      }
+    });
   </script>
 
 </body>
