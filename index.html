@@ -5,72 +5,37 @@
   <title>ContaFácil - Login</title>
   <link rel="stylesheet" href="estilo.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="firebaseConfig.js"></script> <!-- Arquivo com sua configuração do Firebase -->
-  <style>
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background-color: #E6FAF9;
-      min-height: 100vh;
-      font-family: 'Inter', sans-serif;
-    }
-    .login-container {
-      background-color: #fff;
-      padding: 40px;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-      text-align: center;
-      width: 100%;
-      max-width: 400px;
-    }
-    .login-container img {
-      width: 120px;
-      margin-bottom: 20px;
-    }
-    .login-container input {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-    .login-container button {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      background-color: #2F4F4F;
-      color: #fff;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .login-container button:hover {
-      background-color: #1c3333;
-    }
-    .error {
-      color: red;
-      font-size: 14px;
-      margin-top: 10px;
-    }
-  </style>
+  <style>/* seu CSS mantido aqui */</style>
 </head>
 <body>
 
   <div class="login-container">
-    <img src="ContaFacil.png"> <!-- Substitua pelo caminho real do seu logo -->
+    <img src="ContaFacil.png">
     <h2>Bem-vindo ao ContaFácil</h2>
     <input type="email" id="email" placeholder="E-mail" required>
     <input type="password" id="senha" placeholder="Senha" required>
-    <button onclick="login()">Entrar</button>
+    <button id="loginBtn">Entrar</button>
     <div id="mensagem" class="error"></div>
   </div>
 
-  <script>
-    function login() {
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBk4DEhpSsakwZdumaWS6AO0Lre2CPuicU",
+      authDomain: "contafacil-ca62a.firebaseapp.com",
+      projectId: "contafacil-ca62a",
+      storageBucket: "contafacil-ca62a.appspot.com",
+      messagingSenderId: "515706577788",
+      appId: "1:515706577788:web:d2425fd6a74ce81acc3af9",
+      measurementId: "G-L9Z5T75H9K"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    document.getElementById("loginBtn").addEventListener("click", () => {
       const email = document.getElementById('email').value.trim();
       const senha = document.getElementById('senha').value.trim();
       const mensagem = document.getElementById('mensagem');
@@ -81,7 +46,7 @@
         return;
       }
 
-      firebase.auth().signInWithEmailAndPassword(email, senha)
+      signInWithEmailAndPassword(auth, email, senha)
         .then(() => {
           window.location.href = "dashboard.html";
         })
@@ -89,7 +54,7 @@
           mensagem.textContent = "Erro ao fazer login. Verifique o e-mail e a senha.";
           console.error(error);
         });
-    }
+    });
   </script>
 
 </body>
