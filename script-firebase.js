@@ -1,9 +1,15 @@
-
 // script-firebase.js
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  updateDoc,
+  deleteDoc
+} from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
 // 🔐 Configure com seus dados do Firebase
 const firebaseConfig = {
@@ -43,15 +49,6 @@ export async function carregarDoFirestore(caminho) {
     return [];
   }
 }
-export async function atualizarNoFirestore(caminho, id, dadosAtualizados) {
-  try {
-    const ref = doc(db, caminho, id);
-    await updateDoc(ref, dadosAtualizados);
-    console.log("Atualizado com sucesso:", id);
-  } catch (e) {
-    console.error("Erro ao atualizar:", e);
-  }
-}
 
 // ✏️ Atualizar documento existente no Firestore
 export async function atualizarNoFirestore(caminho, id, dados) {
@@ -61,6 +58,17 @@ export async function atualizarNoFirestore(caminho, id, dados) {
     console.log(`Atualizado com sucesso: ${caminho}/${id}`);
   } catch (e) {
     console.error("Erro ao atualizar:", e);
+  }
+}
+
+// ❌ Remover documento do Firestore
+export async function removerDoFirestore(caminho, id) {
+  try {
+    const ref = doc(db, caminho, id);
+    await deleteDoc(ref);
+    console.log(`Removido com sucesso: ${caminho}/${id}`);
+  } catch (e) {
+    console.error("Erro ao remover:", e);
   }
 }
 
