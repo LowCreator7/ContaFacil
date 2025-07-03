@@ -3,6 +3,7 @@
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
 // 🔐 Configure com seus dados do Firebase
 const firebaseConfig = {
@@ -40,6 +41,15 @@ export async function carregarDoFirestore(caminho) {
   } catch (e) {
     console.error("Erro ao carregar:", e);
     return [];
+  }
+}
+export async function atualizarNoFirestore(caminho, id, dadosAtualizados) {
+  try {
+    const ref = doc(db, caminho, id);
+    await updateDoc(ref, dadosAtualizados);
+    console.log("Atualizado com sucesso:", id);
+  } catch (e) {
+    console.error("Erro ao atualizar:", e);
   }
 }
 
