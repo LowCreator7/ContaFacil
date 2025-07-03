@@ -1,4 +1,4 @@
-/* Reset e fonte base */
+/* Reset e base */
 * {
   margin: 0;
   padding: 0;
@@ -9,10 +9,10 @@
 body {
   background-color: #E6FAF9;
   color: #004D4D;
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   animation: fadeIn 0.6s ease-in;
-  display: flex;
-  flex-direction: row;
 }
 
 @keyframes fadeIn {
@@ -25,11 +25,12 @@ body {
   width: 220px;
   background: #2F4F4F;
   color: #fff;
-  padding: 30px 10px;
+  padding: 30px 15px;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  flex-shrink: 0;
+  position: fixed;
+  height: 100vh;
 }
 
 .sidebar h2 {
@@ -46,176 +47,115 @@ body {
   display: block;
 }
 
-.sidebar a:hover,
-.sidebar a.active {
+.sidebar a:hover, .sidebar a.active {
   background-color: #008B8B;
   color: #ffffff;
 }
 
-/* Conteúdo principal */
+/* Main */
 .main {
-  flex: 1;
+  margin-left: 220px;
   padding: 30px;
+  flex: 1;
 }
 
-h2 {
-  text-align: center;
-  margin-bottom: 30px;
+.title {
   font-size: 28px;
-  color: #008B8B;
+  font-weight: 700;
+  margin-bottom: 25px;
+  color: #008080;
 }
 
-form {
+/* Cards */
+.cards {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
   margin-bottom: 30px;
+  justify-content: space-between;
+}
+
+.card {
+  background: #fff;
+  border-left: 6px solid #66CDAA;
+  border-radius: 12px;
+  padding: 20px;
+  flex: 1 1 200px;
+  min-width: 180px;
+  box-shadow: 0 2px 8px rgba(0, 128, 128, 0.1);
+}
+
+.card h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #2F4F4F;
+}
+
+.card .value {
+  font-size: 22px;
+  font-weight: 600;
+  color: #004D4D;
+}
+
+/* Charts */
+.charts {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 20px;
+  justify-content: space-between;
+}
+
+.chart-box {
   background: #ffffff;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  justify-content: center;
-}
-
-input, textarea, select, button {
-  padding: 10px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  flex: 1 1 200px;
-}
-
-button {
-  background-color: #00bcd4;
-  color: white;
-  cursor: pointer;
-  border: none;
-  transition: background 0.3s;
-}
-
-button:hover {
-  background-color: #0097a7;
-}
-
-/* Tabelas */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #fff;
   border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  font-size: 15px;
+  padding: 20px;
+  flex: 1 1 300px;
+  box-shadow: 0 2px 6px rgba(0, 128, 128, 0.08);
+  margin-bottom: 20px;
 }
 
-th, td {
-  padding: 14px 12px;
-  text-align: center;
-  border-bottom: 1px solid #eee;
-}
-
-th {
-  background: #00acc1;
-  color: white;
+.chart-box h4 {
+  margin-bottom: 10px;
   font-weight: 600;
   font-size: 16px;
+  color: #008080;
 }
 
-tr:hover {
-  background: #f1f1f1;
-}
-
-.btn {
-  padding: 6px 12px;
-  border-radius: 5px;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.editar {
-  background: #ffc107;
-  color: #333;
-}
-
-.excluir {
-  background: #dc143c;
-  color: white;
-}
-
-.btn-baixar {
-  background: #4caf50;
-  color: white;
-}
-
-.btn-baixar[disabled] {
-  background-color: #ccc;
-  cursor: default;
-}
-
-.filtros {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  margin-bottom: 30px;
-  flex-wrap: wrap;
-}
-
-.filtro input[type="date"],
-input[type="month"],
-select {
-  padding: 10px;
-  font-size: 16px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-  min-width: 180px;
-}
-
-/* Responsividade */
 @media (max-width: 768px) {
-  body {
-    flex-direction: column;
-  }
-
   .sidebar {
+    position: relative;
     width: 100%;
+    height: auto;
     flex-direction: row;
     flex-wrap: wrap;
-    justify-content: space-around;
+    justify-content: center;
     padding: 10px;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
   }
 
   .sidebar h2 {
-    display: none;
+    width: 100%;
+    text-align: center;
+    margin-bottom: 10px;
   }
 
   .sidebar a {
-    font-size: 14px;
-    padding: 8px 10px;
+    margin: 5px;
+    flex: 1 1 40%;
+    text-align: center;
   }
 
   .main {
-    padding: 15px;
+    margin-left: 0;
+    padding: 20px;
   }
 
-  table {
-    font-size: 13px;
-  }
-
-  th, td {
-    padding: 10px;
-  }
-
-  form {
+  .cards {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .cards, .charts {
+  .charts {
     flex-direction: column;
-    gap: 15px;
+    align-items: stretch;
   }
 }
