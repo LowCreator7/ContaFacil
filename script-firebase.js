@@ -101,6 +101,17 @@ export function renderizarTabela(dados, tabelaId, renderizadorLinha) {
   });
 }
 
+// ✏️ Atualizar apenas alguns campos do documento
+export async function atualizarCampoFirestore(caminho, id, campos) {
+  try {
+    const ref = doc(db, caminho, id);
+    await updateDoc(ref, campos);
+    console.log(`Campos atualizados em ${caminho}/${id}`);
+  } catch (e) {
+    console.error("Erro ao atualizar campos:", e);
+  }
+}
+
 export function criarLinhaHTML(campos) {
   const tr = document.createElement("tr");
   campos.forEach(c => {
