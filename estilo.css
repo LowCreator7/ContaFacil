@@ -1,4 +1,3 @@
-/* Reset e base */
 * {
   margin: 0;
   padding: 0;
@@ -7,17 +6,10 @@
 }
 
 body {
+  display: flex;
+  min-height: 100vh;
   background-color: #E6FAF9;
   color: #004D4D;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  animation: fadeIn 0.6s ease-in;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 /* Sidebar */
@@ -47,7 +39,8 @@ body {
   display: block;
 }
 
-.sidebar a:hover, .sidebar a.active {
+.sidebar a:hover,
+.sidebar a.active {
   background-color: #008B8B;
   color: #ffffff;
 }
@@ -57,8 +50,11 @@ body {
   margin-left: 220px;
   padding: 30px;
   flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
+/* Título */
 .title {
   font-size: 28px;
   font-weight: 700;
@@ -69,10 +65,9 @@ body {
 /* Cards */
 .cards {
   display: flex;
-  gap: 20px;
   flex-wrap: wrap;
+  gap: 20px;
   margin-bottom: 30px;
-  justify-content: space-between;
 }
 
 .card {
@@ -80,8 +75,8 @@ body {
   border-left: 6px solid #66CDAA;
   border-radius: 12px;
   padding: 20px;
-  flex: 1 1 200px;
-  min-width: 180px;
+  flex: 1 1 250px;
+  min-width: 200px;
   box-shadow: 0 2px 8px rgba(0, 128, 128, 0.1);
 }
 
@@ -102,7 +97,6 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
-  justify-content: space-between;
 }
 
 .chart-box {
@@ -110,8 +104,8 @@ body {
   border-radius: 12px;
   padding: 20px;
   flex: 1 1 300px;
+  min-width: 300px;
   box-shadow: 0 2px 6px rgba(0, 128, 128, 0.08);
-  margin-bottom: 20px;
 }
 
 .chart-box h4 {
@@ -121,7 +115,17 @@ body {
   color: #008080;
 }
 
+canvas {
+  max-width: 100%;
+  height: auto !important;
+}
+
+/* Responsividade */
 @media (max-width: 768px) {
+  body {
+    flex-direction: column;
+  }
+
   .sidebar {
     position: relative;
     width: 100%;
@@ -133,15 +137,7 @@ body {
   }
 
   .sidebar h2 {
-    width: 100%;
-    text-align: center;
-    margin-bottom: 10px;
-  }
-
-  .sidebar a {
-    margin: 5px;
-    flex: 1 1 40%;
-    text-align: center;
+    display: none;
   }
 
   .main {
@@ -149,13 +145,8 @@ body {
     padding: 20px;
   }
 
-  .cards {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
+  .cards,
   .charts {
     flex-direction: column;
-    align-items: stretch;
   }
 }
