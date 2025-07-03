@@ -2,48 +2,17 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Meu Perfil</title>
   <link rel="stylesheet" href="estilo.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
-  <script type="module">
-    import { auth } from './firebase-auth.js';
-    import { signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-
-    const nomeElem = document.getElementById("nomeUsuario");
-    const emailElem = document.getElementById("emailUsuario");
-    const nomeInput = document.getElementById("editarNome");
-    const btnSalvar = document.getElementById("salvarNome");
-
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        nomeElem.textContent = user.displayName || 'Sem nome definido';
-        emailElem.textContent = user.email;
-        nomeInput.value = user.displayName || '';
-
-        btnSalvar.onclick = async () => {
-          const novoNome = nomeInput.value.trim();
-          if (novoNome) {
-            await updateProfile(user, { displayName: novoNome });
-            alert("Nome atualizado com sucesso!");
-            nomeElem.textContent = novoNome;
-          }
-        };
-      } else {
-        window.location.href = "login.html";
-      }
-    });
-
-    window.logout = async () => {
-      await signOut(auth);
-      window.location.href = "login.html";
-    };
-  </script>
 </head>
 <body>
+
   <aside class="sidebar">
     <h2>👤 Meu Perfil</h2>
     <nav>
-      <a href="perfil.html" class="active">⚙️ Meu Perfil</a>
+      <a href="perfil.html" class="active">👤 Meu Perfil</a>
       <a href="dashboard.html">🏠 Dashboard</a>
       <a href="compras.html">🛒 Compras</a>
       <a href="vendas.html">💰 Vendas</a>
@@ -59,16 +28,60 @@
   </aside>
 
   <main class="main">
-    <h2>Meu Perfil</h2>
-    <p><strong>Nome:</strong> <span id="nomeUsuario">Carregando...</span></p>
-    <p><strong>Email:</strong> <span id="emailUsuario">Carregando...</span></p>
+    <h2>Informações do Usuário</h2>
 
-    <h3>Editar Nome</h3>
-    <input type="text" id="editarNome" placeholder="Digite seu nome">
-    <button id="salvarNome">Salvar</button>
+    <div class="card">
+      <p><strong>Nome:</strong> <span id="userNome">Carregando...</span></p>
+      <p><strong>Email:</strong> <span id="userEmail">Carregando...</span></p>
+    </div>
 
-    <hr>
-    <button onclick="logout()" style="background-color:#e74c3c; color:white; padding:10px 20px; border:none; border-radius:5px;">Logout</button>
+    <button id="btnLogout">🚪 Sair</button>
   </main>
+
+  <script type="module">
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+
+    // Configuração do Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyBk4DEhpSsakwZdumaWS6AO0Lre2CPuicU",
+      authDomain: "contafacil-ca62a.firebaseapp.com",
+      projectId: "contafacil-ca62a",
+      storageBucket: "contafacil-ca62a.appspot.com",
+      messagingSenderId: "515706577788",
+      appId: "1:515706577788:web:d2425fd6a74ce81acc3af9",
+      measurementId: "G-L9Z5T75H9K"
+    };
+
+    // Inicializa Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const spanNome = document.getElementById("userNome");
+    const spanEmail = document.getElementById("userEmail");
+
+    // Verifica usuário logado
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        spanNome.textContent = user.displayName || "(Sem nome)";
+        spanEmail.textContent = user.email;
+      } else {
+        window.location.href = "login.html";
+      }
+    });
+
+    // Logout
+    document.getElementById("btnLogout").addEventListener("click", () => {
+      signOut(auth)
+        .then(() => {
+          alert("Logout realizado com sucesso!");
+          window.location.href = "login.html";
+        })
+        .catch((error) => {
+          console.error("Erro ao sair:", error);
+        });
+    });
+  </script>
+
 </body>
 </html>
