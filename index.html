@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ContaFácil - Início</title>
+  <link rel="stylesheet" href="estilo.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(to right, #E0F7FA, #E6FAF9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      color: #004D4D;
+      margin-bottom: 30px;
+    }
+
+    .menu {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
+      max-width: 800px;
+      width: 100%;
+      padding: 0 20px;
+    }
+
+    .menu a {
+      background-color: #2F4F4F;
+      color: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-size: 1.1rem;
+      transition: 0.3s;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .menu a:hover {
+      background-color: #00796B;
+      transform: translateY(-2px);
+    }
+
+    footer {
+      position: absolute;
+      bottom: 10px;
+      font-size: 0.9rem;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📊 ContaFácil - Sistema Financeiro</h1>
+
+  <div class="menu">
+    <a href="dashboard.html">🏠 Dashboard</a>
+    <a href="vendas.html">💰 Vendas</a>
+    <a href="compras.html">🛒 Compras</a>
+    <a href="produtos.html">📄 Produtos</a>
+    <a href="clientes.html">👤 Clientes</a>
+    <a href="fornecedores.html">🏭 Fornecedores</a>
+    <a href="contas-receber-simples.html">📥 Contas a Receber</a>
+    <a href="contas-pagar.html">📤 Contas a Pagar</a>
+    <a href="despesas.html">💸 Despesas</a>
+    <a href="estoque.html">📦 Estoque</a>
+    <a href="dre.html">📊 DRE</a>
+  </div>
+
+  <footer>&copy; 2025 ContaFácil - Todos os direitos reservados.</footer>
+
+</body>
+</html>
