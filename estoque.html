@@ -53,90 +53,101 @@
   </main>
 
   <script type="module">
-    import { carregarDoFirestore } from './script-firebase.js';
+  import {
+    auth,
+    carregarDoFirestore
+  } from './script-firebase.js';
 
-    const tabelaEstoque = document.getElementById("tabelaEstoque");
-    const filtroEstoque = document.getElementById("filtroEstoque");
+  const tabelaEstoque = document.getElementById("tabelaEstoque");
+  const filtroEstoque = document.getElementById("filtroEstoque");
 
-    let compras = [];
-    let vendas = [];
+  let compras = [];
+  let vendas = [];
 
-    async function carregarDados() {
-      compras = await carregarDoFirestore("compras");
-      vendas = await carregarDoFirestore("vendas");
-      renderizarEstoque();
+  async function carregarDados() {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("Usuário não autenticado.");
+      return;
     }
 
-    window.renderizarEstoque = function () {
-      tabelaEstoque.innerHTML = "";
+    const base = `usuarios/${user.uid}/`;
 
-      const produtos = {};
+    compras = await carregarDoFirestore(base + "compras");
+    vendas = await carregarDoFirestore(base + "vendas");
+    renderizarEstoque();
+  }
 
-      // Agrupando compras
-      compras.forEach(compra => {
-        const nome = compra.produto;
-        const qtd = parseInt(compra.quantidade || 0);
-        const valorCompra = parseFloat(compra.valor || 0);
-        const porcentagemLucro = parseFloat(compra.porcentagemLucro || 0);
-        const valorVenda = valorCompra + (valorCompra * porcentagemLucro / 100);
+  window.renderizarEstoque = function () {
+    tabelaEstoque.innerHTML = "";
 
-        if (!produtos[nome]) {
-          produtos[nome] = {
-            comprado: 0,
-            vendido: 0,
-            valorCompra: valorCompra,
-            valorVenda: valorVenda
-          };
-        }
+    const produtos = {};
 
-        produtos[nome].comprado += qtd;
-        produtos[nome].valorCompra = valorCompra;
-        produtos[nome].valorVenda = valorVenda;
-      });
+    // Agrupar compras
+    compras.forEach(compra => {
+      const nome = compra.produto;
+      const qtd = parseInt(compra.quantidade || 0);
+      const valorCompra = parseFloat(compra.valor || 0);
+      const porcentagemLucro = parseFloat(compra.porcentagemLucro || 0);
+      const valorVenda = valorCompra + (valorCompra * porcentagemLucro / 100);
 
-      // Agrupando vendas
-      vendas.forEach(venda => {
-        const nome = venda.produto;
-        const qtd = parseInt(venda.quantidade || 0);
-        const valorVenda = parseFloat(venda.valor || 0);
+      if (!produtos[nome]) {
+        produtos[nome] = {
+          comprado: 0,
+          vendido: 0,
+          valorCompra: valorCompra,
+          valorVenda: valorVenda
+        };
+      }
 
-        if (!produtos[nome]) {
-          produtos[nome] = {
-            comprado: 0,
-            vendido: 0,
-            valorCompra: 0,
-            valorVenda: valorVenda
-          };
-        }
+      produtos[nome].comprado += qtd;
+      produtos[nome].valorCompra = valorCompra;
+      produtos[nome].valorVenda = valorVenda;
+    });
 
-        produtos[nome].vendido += qtd;
-        produtos[nome].valorVenda = valorVenda; // Assume o último valor informado
-      });
+    // Agrupar vendas
+    vendas.forEach(venda => {
+      const nome = venda.produto;
+      const qtd = parseInt(venda.quantidade || 0);
+      const valorVenda = parseFloat(venda.valor || 0);
 
-      const filtroValor = parseInt(filtroEstoque.value);
+      if (!produtos[nome]) {
+        produtos[nome] = {
+          comprado: 0,
+          vendido: 0,
+          valorCompra: 0,
+          valorVenda: valorVenda
+        };
+      }
 
-      Object.keys(produtos).forEach(nome => {
-        const p = produtos[nome];
-        const estoque = p.comprado - p.vendido;
-        const lucroEstimado = (p.valorVenda - p.valorCompra) * estoque;
+      produtos[nome].vendido += qtd;
+      produtos[nome].valorVenda = valorVenda; // Assume o último informado
+    });
 
-        if (!isNaN(filtroValor) && estoque > filtroValor) return;
+    const filtroValor = parseInt(filtroEstoque.value);
 
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${nome}</td>
-          <td>${p.comprado}</td>
-          <td>${p.vendido}</td>
-          <td>${estoque}</td>
-          <td>R$ ${p.valorCompra.toFixed(2)}</td>
-          <td>R$ ${p.valorVenda.toFixed(2)}</td>
-          <td>R$ ${lucroEstimado.toFixed(2)}</td>
-        `;
-        tabelaEstoque.appendChild(row);
-      });
-    };
+    Object.keys(produtos).forEach(nome => {
+      const p = produtos[nome];
+      const estoque = p.comprado - p.vendido;
+      const lucroEstimado = (p.valorVenda - p.valorCompra) * estoque;
 
-    carregarDados();
-  </script>
+      if (!isNaN(filtroValor) && estoque > filtroValor) return;
+
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${nome}</td>
+        <td>${p.comprado}</td>
+        <td>${p.vendido}</td>
+        <td>${estoque}</td>
+        <td>R$ ${p.valorCompra.toFixed(2)}</td>
+        <td>R$ ${p.valorVenda.toFixed(2)}</td>
+        <td>R$ ${lucroEstimado.toFixed(2)}</td>
+      `;
+      tabelaEstoque.appendChild(row);
+    });
+  };
+
+  carregarDados();
+</script>
 </body>
 </html>
