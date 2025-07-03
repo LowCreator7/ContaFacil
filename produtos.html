@@ -43,53 +43,62 @@
   </main>
 
   <script type="module">
-    import { carregarDoFirestore } from './script-firebase.js';
+  import { carregarDoFirestore } from './script-firebase.js';
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
-    const tabela = document.getElementById("tabelaProdutos");
+  const tabela = document.getElementById("tabelaProdutos");
 
-    async function carregarProdutos() {
-      const compras = await carregarDoFirestore("compras");
-      const produtos = {};
+  const auth = getAuth();
 
-      compras.forEach(compra => {
-        const nome = compra.produto || "Sem nome";
-        const quantidade = parseFloat(compra.quantidade || 0);
-        const valor = parseFloat(compra.valor || 0);
-        const lucro = parseFloat(compra.porcentagemLucro || 0);
-
-        if (!produtos[nome]) {
-          produtos[nome] = {
-            quantidade: 0,
-            total: 0,
-            lucro: lucro
-          };
-        }
-
-        produtos[nome].quantidade += quantidade;
-        produtos[nome].total += valor * quantidade;
-
-        // Atualiza lucro se não existir (mantém o primeiro valor registrado)
-        if (!produtos[nome].lucro) {
-          produtos[nome].lucro = lucro;
-        }
-      });
-
-      const produtosOrdenados = Object.entries(produtos).sort((a, b) => a[0].localeCompare(b[0]));
-
-      produtosOrdenados.forEach(([nome, dados]) => {
-        const media = dados.quantidade ? dados.total / dados.quantidade : 0;
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${nome}</td>
-          <td>${dados.quantidade}</td>
-          <td>R$ ${media.toFixed(2)}</td>
-          <td>${dados.lucro.toFixed(1)}%</td>
-        `;
-        tabela.appendChild(row);
-      });
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const uid = user.uid;
+      await carregarProdutos(uid);
+    } else {
+      window.location.href = "login.html";
     }
+  });
 
-    carregarProdutos();
-  </script>
+  async function carregarProdutos(uid) {
+    const compras = await carregarDoFirestore(`usuarios/${uid}/compras`);
+    const produtos = {};
+
+    compras.forEach(compra => {
+      const nome = compra.produto || "Sem nome";
+      const quantidade = parseFloat(compra.quantidade || 0);
+      const valor = parseFloat(compra.valor || 0);
+      const lucro = parseFloat(compra.porcentagemLucro || 0);
+
+      if (!produtos[nome]) {
+        produtos[nome] = {
+          quantidade: 0,
+          total: 0,
+          lucro: lucro
+        };
+      }
+
+      produtos[nome].quantidade += quantidade;
+      produtos[nome].total += valor * quantidade;
+
+      if (!produtos[nome].lucro) {
+        produtos[nome].lucro = lucro;
+      }
+    });
+
+    const produtosOrdenados = Object.entries(produtos).sort((a, b) => a[0].localeCompare(b[0]));
+
+    produtosOrdenados.forEach(([nome, dados]) => {
+      const media = dados.quantidade ? dados.total / dados.quantidade : 0;
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${nome}</td>
+        <td>${dados.quantidade}</td>
+        <td>R$ ${media.toFixed(2)}</td>
+        <td>${dados.lucro.toFixed(1)}%</td>
+      `;
+      tabela.appendChild(row);
+    });
+  }
+</script>
 </body>
 </html>
