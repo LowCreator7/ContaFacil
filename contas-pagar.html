@@ -64,17 +64,12 @@
 </main>
 
 <script type="module">
-  import {
-    auth,
-    carregarDoFirestore,
-    atualizarCampoFirestore
-  } from './script-firebase.js';
+  import { carregarDoFirestore, atualizarCampoFirestore } from './script-firebase.js';
 
   const tabela = document.getElementById('tabelaContasPagar');
   const filtroStatus = document.getElementById('filtroStatus');
   const dataInicio = document.getElementById('dataInicio');
   const dataFim = document.getElementById('dataFim');
-  let compras = [];
 
   function formatarDataBR(dataISO) {
     return new Date(dataISO).toLocaleDateString('pt-BR');
@@ -87,31 +82,21 @@
     return (!ini || d >= ini) && (!fi || d <= fi);
   }
 
-  async function renderizar() {
-    const userId = auth.currentUser?.uid;
-    if (!userId) return;
+  let compras = [];
 
+  async function renderizar() {
     tabela.innerHTML = '';
     const filtro = filtroStatus.value;
     const inicio = dataInicio.value;
     const fim = dataFim.value;
 
-    let totalAberto = 0;
-    let totalPago = 0;
+    compras = await carregarDoFirestore('compras');
 
-    compras = await carregarDoFirestore(`usuarios/${userId}/compras`);
-
-    compras.forEach((compra) => {
+    compras.forEach((compra, i) => {
       if (compra.pagamento === 'aprazo' && Array.isArray(compra.parcelasDetalhes)) {
         compra.parcelasDetalhes.forEach((parcela, pIndex) => {
           if (filtro !== 'todos' && parcela.status !== filtro) return;
           if (!dentroDoPeriodo(parcela.vencimento, inicio, fim)) return;
-
-          if (parcela.status === 'pago') {
-            totalPago += parcela.valor;
-          } else {
-            totalAberto += parcela.valor;
-          }
 
           const row = document.createElement('tr');
           row.innerHTML = `
@@ -121,12 +106,10 @@
             <td>R$ ${parcela.valor.toFixed(2)}</td>
             <td>${parcela.numero}/${compra.parcelasDetalhes.length}</td>
             <td>${formatarDataBR(parcela.vencimento)}</td>
-            <td style="color: ${parcela.status === 'pago' ? 'green' : 'red'}; font-weight: 600;">
-              ${parcela.status}
-            </td>
+            <td>${parcela.status}</td>
             <td>
               <button onclick="baixarParcela('${compra.id}', ${pIndex})" ${parcela.status === 'pago' ? 'disabled' : ''}>
-                ✅ Baixar
+                Dar Baixa
               </button>
             </td>
           `;
@@ -136,70 +119,45 @@
         if (filtro !== 'todos' && (compra.status || 'em aberto') !== filtro) return;
         if (!dentroDoPeriodo(compra.data, inicio, fim)) return;
 
-        const valor = parseFloat(compra.valor) || 0;
-        const quantidade = parseInt(compra.quantidade || 1);
-        const total = valor * quantidade;
-
-        if ((compra.status || 'em aberto') === 'pago') {
-          totalPago += total;
-        } else {
-          totalAberto += total;
-        }
-
+        const total = parseFloat(compra.valor) * parseInt(compra.quantidade || 1);
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${formatarDataBR(compra.data)}</td>
           <td>${compra.fornecedor || '-'}</td>
           <td>${compra.produto}</td>
-          <td>R$ ${valor.toFixed(2)}</td>
+          <td>R$ ${parseFloat(compra.valor).toFixed(2)}</td>
           <td>-</td>
           <td>${formatarDataBR(compra.data)}</td>
-          <td style="color: ${(compra.status || 'em aberto') === 'pago' ? 'green' : 'red'}; font-weight: 600;">
-            ${compra.status || 'em aberto'}
-          </td>
+          <td>${compra.status || 'em aberto'}</td>
           <td>
-            <button onclick="baixarCompra('${compra.id}')" ${(compra.status === 'pago') ? 'disabled' : ''}>
-              ✅ Baixar
+            <button onclick="baixarCompra('${compra.id}')" ${compra.status === 'pago' ? 'disabled' : ''}>
+              Dar Baixa
             </button>
           </td>
         `;
         tabela.appendChild(row);
       }
     });
-
-    document.getElementById('resumoContas').innerText = `
-      Total em aberto: R$ ${totalAberto.toFixed(2)} | Total pago: R$ ${totalPago.toFixed(2)}
-    `;
   }
 
+  // Atualização Firebase
   window.baixarParcela = async (docId, parcelaIndex) => {
-    const userId = auth.currentUser?.uid;
-    if (!userId) return;
-
     if (!confirm('Confirmar baixa desta parcela?')) return;
     const doc = compras.find(c => c.id === docId);
     if (!doc || !doc.parcelasDetalhes?.[parcelaIndex]) return;
     doc.parcelasDetalhes[parcelaIndex].status = 'pago';
-
-    await atualizarCampoFirestore(`usuarios/${userId}/compras`, docId, { parcelasDetalhes: doc.parcelasDetalhes });
+    await atualizarCampoFirestore('compras', docId, { parcelasDetalhes: doc.parcelasDetalhes });
     await renderizar();
   };
 
   window.baixarCompra = async (docId) => {
-    const userId = auth.currentUser?.uid;
-    if (!userId) return;
-
     if (!confirm('Confirmar baixa desta compra?')) return;
-    await atualizarCampoFirestore(`usuarios/${userId}/compras`, docId, { status: 'pago' });
+    await atualizarCampoFirestore('compras', docId, { status: 'pago' });
     await renderizar();
   };
 
   filtroStatus.addEventListener('change', renderizar);
-
-  auth.onAuthStateChanged(user => {
-    if (user) renderizar();
-    else window.location.href = "login.html";
-  });
+  renderizar();
 </script>
 
 </body>
