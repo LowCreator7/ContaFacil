@@ -59,136 +59,173 @@
   </main>
 
   <script type="module">
-    import { carregarDoFirestore } from './script-firebase.js';
-    import { auth } from './firebase-config.js';
+  import { carregarDoFirestore } from './script-firebase.js';
 
-    const userId = auth.currentUser?.uid;
-    if (!userId) {
-      alert("Usuário não autenticado.");
-      throw new Error("Usuário não autenticado");
+  const totalVendasElem = document.getElementById('totalVendas');
+  const totalReceberElem = document.getElementById('totalReceber');
+  const contasPagarElem = document.getElementById('contasPagar');
+
+  function formatar(valor) {
+    return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  const contasReceber = [];
+  const contasPagar = [];
+
+  const vendas = await carregarDoFirestore('vendas');
+  const compras = await carregarDoFirestore('compras');
+
+  let totalVendas = 0;
+  let totalReceber = 0;
+  let totalPagar = 0;
+  const vendasPorCliente = {};
+
+  // VENDAS
+  vendas.forEach(venda => {
+    const total = parseFloat(venda.valor) * parseInt(venda.quantidade);
+    totalVendas += total;
+
+    if (venda.cliente) {
+      vendasPorCliente[venda.cliente] = (vendasPorCliente[venda.cliente] || 0) + total;
     }
 
-    const totalVendasElem = document.getElementById('totalVendas');
-    const totalReceberElem = document.getElementById('totalReceber');
-    const contasPagarElem = document.getElementById('contasPagar');
-
-    function formatar(valor) {
-      return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    }
-
-    const contasReceber = [];
-    const contasPagar = [];
-
-    const vendas = await carregarDoFirestore(`usuarios/${userId}/vendas`);
-    const compras = await carregarDoFirestore(`usuarios/${userId}/compras`);
-
-    let totalVendas = 0;
-    let totalReceber = 0;
-    let totalPagar = 0;
-    const vendasPorMes = {};
-
-    vendas.forEach(venda => {
-      const total = parseFloat(venda.valor) * parseInt(venda.quantidade);
-      totalVendas += total;
-
-      const mes = venda.data?.slice(0, 7);
-      if (mes) vendasPorMes[mes] = (vendasPorMes[mes] || 0) + total;
-
-      if (venda.pagamento === 'avista' && venda.status !== 'recebido') {
-        contasReceber.push({ data: venda.data, valor: total, status: 'em aberto' });
-        totalReceber += total;
-      } else if (venda.pagamento === 'aprazo' && Array.isArray(venda.parcelasDetalhes)) {
-        venda.parcelasDetalhes.forEach(parcela => {
-          if (parcela.status === 'em aberto') {
-            contasReceber.push({ data: parcela.vencimento, valor: parcela.valor, status: 'em aberto' });
-            totalReceber += parcela.valor;
-          }
-        });
-      }
-    });
-
-    compras.forEach(compra => {
-      if (compra.pagamento === 'aprazo' && Array.isArray(compra.parcelasDetalhes)) {
-        compra.parcelasDetalhes.forEach(parcela => {
-          if (parcela.status === 'em aberto') {
-            contasPagar.push({ data: parcela.vencimento, valor: parcela.valor, status: 'em aberto' });
-            totalPagar += parcela.valor;
-          }
-        });
-      } else {
-        if (compra.status === 'em aberto') {
-          const valorTotal = (parseFloat(compra.valor) || 0) * (parseInt(compra.quantidade) || 1);
-          contasPagar.push({ data: compra.data, valor: valorTotal, status: 'em aberto' });
-          totalPagar += valorTotal;
-        }
-      }
-    });
-
-    totalVendasElem.textContent = formatar(totalVendas);
-    totalReceberElem.textContent = formatar(totalReceber);
-    contasPagarElem.textContent = formatar(totalPagar);
-
-    new Chart(document.getElementById('vendasClientes'), {
-      type: 'bar',
-      data: {
-        labels: Object.keys(vendasPorMes),
-        datasets: [{
-          label: 'Faturamento (R$)',
-          data: Object.values(vendasPorMes),
-          backgroundColor: '#40E0D0'
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true } }
-      }
-    });
-
-    function agruparPorMes(array) {
-      const resultado = {};
-      array.forEach(item => {
-        const mes = item.data?.slice(0, 7);
-        if (item.status === 'em aberto' && mes) {
-          resultado[mes] = (resultado[mes] || 0) + parseFloat(item.valor);
+    if (venda.pagamento === 'avista' && venda.status !== 'recebido') {
+      contasReceber.push({ data: venda.data, valor: total, status: 'em aberto' });
+      totalReceber += total;
+    } else if (venda.pagamento === 'aprazo' && Array.isArray(venda.parcelasDetalhes)) {
+      venda.parcelasDetalhes.forEach(parcela => {
+        if (parcela.status === 'em aberto') {
+          contasReceber.push({ data: parcela.vencimento, valor: parcela.valor, status: 'em aberto' });
+          totalReceber += parcela.valor;
         }
       });
-      return resultado;
     }
+  });
 
-    const receberMensal = agruparPorMes(contasReceber);
-    const pagarMensal = agruparPorMes(contasPagar);
-    const meses = [...new Set([...Object.keys(receberMensal), ...Object.keys(pagarMensal)])].sort();
+  // COMPRAS
+  compras.forEach(compra => {
+    if (compra.pagamento === 'aprazo' && Array.isArray(compra.parcelasDetalhes)) {
+      compra.parcelasDetalhes.forEach(parcela => {
+        if (parcela.status === 'em aberto') {
+          contasPagar.push({ data: parcela.vencimento, valor: parcela.valor, status: 'em aberto' });
+          totalPagar += parcela.valor;
+        }
+      });
+    } else {
+      const status = compra.status || 'em aberto';
+      if (status === 'em aberto') {
+        const valorTotal = (parseFloat(compra.valor) || 0) * (parseInt(compra.quantidade) || 1);
+        contasPagar.push({ data: compra.data, valor: valorTotal, status: 'em aberto' });
+        totalPagar += valorTotal;
+      }
+    }
+  });
 
-    new Chart(document.getElementById('receberPagar'), {
-      type: 'line',
-      data: {
-        labels: meses,
-        datasets: [
-          {
-            label: 'A Receber',
-            data: meses.map(m => receberMensal[m] || 0),
-            borderColor: '#20B2AA',
-            backgroundColor: 'rgba(32,178,170,0.1)',
-            fill: true,
-            tension: 0.4
-          },
-          {
-            label: 'A Pagar',
-            data: meses.map(m => pagarMensal[m] || 0),
-            borderColor: '#008B8B',
-            backgroundColor: 'rgba(0,139,139,0.1)',
-            fill: true,
-            tension: 0.4
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { position: 'top' } },
-        scales: { y: { beginAtZero: true } }
+  totalVendasElem.textContent = formatar(totalVendas);
+  totalReceberElem.textContent = formatar(totalReceber);
+  contasPagarElem.textContent = formatar(totalPagar);
+
+  // Agrupar faturamento por mês
+function agruparVendasPorMes(vendas) {
+  const resultado = {};
+  vendas.forEach(v => {
+    const total = parseFloat(v.valor) * parseInt(v.quantidade);
+    const mes = v.data?.slice(0, 7);
+    if (mes) {
+      resultado[mes] = (resultado[mes] || 0) + total;
+    }
+  });
+  return resultado;
+}
+
+const vendasMensais = agruparVendasPorMes(vendas);
+const mesesVendas = Object.keys(vendasMensais).sort();
+
+// GRÁFICO - Faturamento Mensal
+new Chart(document.getElementById('vendasClientes'), {
+  type: 'bar',
+  data: {
+    labels: mesesVendas,
+    datasets: [{
+      label: 'Faturamento (R$)',
+      data: mesesVendas.map(m => vendasMensais[m]),
+      backgroundColor: '#4CAF50'
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: context => formatar(context.raw)
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: value => formatar(value)
+        }
+      }
+    }
+  }
+});
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+
+  // Agrupamento por mês
+  function agruparPorMes(array) {
+    const resultado = {};
+    array.forEach(item => {
+      const mes = item.data?.slice(0, 7);
+      if (item.status === 'em aberto' && mes) {
+        resultado[mes] = (resultado[mes] || 0) + parseFloat(item.valor);
       }
     });
-  </script>
+    return resultado;
+  }
+
+  const receberMensal = agruparPorMes(contasReceber);
+  const pagarMensal = agruparPorMes(contasPagar);
+  const meses = [...new Set([...Object.keys(receberMensal), ...Object.keys(pagarMensal)])].sort();
+
+  // GRÁFICO - Contas a Receber e Pagar
+  new Chart(document.getElementById('receberPagar'), {
+    type: 'line',
+    data: {
+      labels: meses,
+      datasets: [
+        {
+          label: 'A Receber',
+          data: meses.map(m => receberMensal[m] || 0),
+          borderColor: '#20B2AA',
+          backgroundColor: 'rgba(32,178,170,0.1)',
+          fill: true,
+          tension: 0.4
+        },
+        {
+          label: 'A Pagar',
+          data: meses.map(m => pagarMensal[m] || 0),
+          borderColor: '#008B8B',
+          backgroundColor: 'rgba(0,139,139,0.1)',
+          fill: true,
+          tension: 0.4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'top' } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+</script>
+
 </body>
 </html>
