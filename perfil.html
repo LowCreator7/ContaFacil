@@ -72,15 +72,14 @@
 
     // Logout
     document.getElementById("btnLogout").addEventListener("click", () => {
-      signOut(auth)
-        .then(() => {
-          alert("Logout realizado com sucesso!");
-          window.location.href = "login.html";
-        })
-        .catch((error) => {
-          console.error("Erro ao sair:", error);
-        });
+  signOut(auth)
+    .then(() => {
+      location.replace("login.html");  // Evita voltar para a página anterior
+    })
+    .catch((error) => {
+      console.error("Erro ao sair:", error);
     });
+});
   </script>
 
 </body>
