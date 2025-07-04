@@ -61,7 +61,6 @@
 
   <script type="module">
   import {
-    auth,
     carregarDoFirestore,
     salvarNoFirestore,
     removerDoFirestore
@@ -77,10 +76,7 @@
   }
 
   async function renderizar() {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    despesas = await carregarDoFirestore(`usuarios/${user.uid}/despesas`);
+    despesas = await carregarDoFirestore("despesas");
     tabela.innerHTML = '';
     despesas.forEach(d => {
       const row = document.createElement('tr');
@@ -99,32 +95,23 @@
 
   form.addEventListener('submit', async e => {
     e.preventDefault();
-    const user = auth.currentUser;
-    if (!user) return;
-
     const data = document.getElementById('data').value;
     const descricao = document.getElementById('descricao').value;
     const valor = parseFloat(document.getElementById('valor').value);
     const categoria = document.getElementById('categoria').value;
 
-    await salvarNoFirestore(`usuarios/${user.uid}/despesas`, { data, descricao, valor, categoria });
+    await salvarNoFirestore("despesas", { data, descricao, valor, categoria });
     form.reset();
     await renderizar();
   });
 
   window.excluirDespesa = async (id) => {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    await removerDoFirestore(`usuarios/${user.uid}/despesas`, id);
+    await removerDoFirestore("despesas", id);
     await renderizar();
   };
 
-  auth.onAuthStateChanged(user => {
-    if (user) renderizar();
-    else window.location.href = 'login.html';
-  });
+  await renderizar();
 </script>
-
+  
 </body>
 </html>
