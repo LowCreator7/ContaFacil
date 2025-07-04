@@ -11,7 +11,6 @@
   <aside class="sidebar">
     <h2>📦 Produtos</h2>
     <nav>
-      <a href="perfil.html">⚙️ Meu Perfil</a>
       <a href="dashboard.html">🏠 Dashboard</a>
       <a href="compras.html">🛒 Compras</a>
       <a href="vendas.html">💰 Vendas</a>
@@ -22,7 +21,7 @@
       <a href="contas-pagar.html">📤 Contas a Pagar</a>
       <a href="despesas.html">💸 Despesas</a>
       <a href="estoque.html">📦 Estoque</a>
-      <a href="dre.html">📊 DRE</a>
+      <a href="DRE.html">📊 DRE</a>
     </nav>
   </aside>
 
@@ -43,62 +42,43 @@
   </main>
 
   <script type="module">
-  import { carregarDoFirestore } from './script-firebase.js';
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import { carregarDoFirestore } from './script-firebase.js';
 
-  const tabela = document.getElementById("tabelaProdutos");
+    const tabela = document.getElementById("tabelaProdutos");
 
-  const auth = getAuth();
+    async function carregarProdutos() {
+      const compras = await carregarDoFirestore("compras");
+      const produtos = {};
 
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      const uid = user.uid;
-      await carregarProdutos(uid);
-    } else {
-      window.location.href = "login.html";
+      compras.forEach(c => {
+        const nome = c.produto;
+        if (!produtos[nome]) {
+          produtos[nome] = {
+            total: 0,
+            quantidade: 0,
+            lucro: c.porcentagemLucro || 0
+          };
+        }
+
+        produtos[nome].quantidade += c.quantidade;
+        produtos[nome].total += c.valor * c.quantidade;
+        produtos[nome].lucro = c.porcentagemLucro || produtos[nome].lucro;
+      });
+
+      Object.entries(produtos).forEach(([nome, p]) => {
+        const media = p.quantidade ? (p.total / p.quantidade) : 0;
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${nome}</td>
+          <td>${p.quantidade}</td>
+          <td>R$ ${media.toFixed(2)}</td>
+          <td>${p.lucro}%</td>
+        `;
+        tabela.appendChild(row);
+      });
     }
-  });
 
-  async function carregarProdutos(uid) {
-    const compras = await carregarDoFirestore(`usuarios/${uid}/compras`);
-    const produtos = {};
-
-    compras.forEach(compra => {
-      const nome = compra.produto || "Sem nome";
-      const quantidade = parseFloat(compra.quantidade || 0);
-      const valor = parseFloat(compra.valor || 0);
-      const lucro = parseFloat(compra.porcentagemLucro || 0);
-
-      if (!produtos[nome]) {
-        produtos[nome] = {
-          quantidade: 0,
-          total: 0,
-          lucro: lucro
-        };
-      }
-
-      produtos[nome].quantidade += quantidade;
-      produtos[nome].total += valor * quantidade;
-
-      if (!produtos[nome].lucro) {
-        produtos[nome].lucro = lucro;
-      }
-    });
-
-    const produtosOrdenados = Object.entries(produtos).sort((a, b) => a[0].localeCompare(b[0]));
-
-    produtosOrdenados.forEach(([nome, dados]) => {
-      const media = dados.quantidade ? dados.total / dados.quantidade : 0;
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${nome}</td>
-        <td>${dados.quantidade}</td>
-        <td>R$ ${media.toFixed(2)}</td>
-        <td>${dados.lucro.toFixed(1)}%</td>
-      `;
-      tabela.appendChild(row);
-    });
-  }
-</script>
+    carregarProdutos();
+  </script>
 </body>
 </html>
