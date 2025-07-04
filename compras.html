@@ -80,154 +80,162 @@
   </div>
 
   <script type="module">
-  import {
-    carregarDoFirestore,
-    salvarNoFirestore,
-    atualizarNoFirestore,
-    removerDoFirestore
-  } from './script-firebase.js';
+    import {
+      carregarDoFirestore,
+      salvarNoFirestore,
+      atualizarNoFirestore,
+      removerDoFirestore
+    } from './script-firebase.js';
 
-  const form = document.getElementById("formCompras");
-  const tabela = document.getElementById("tabelaCompras");
-  const selectPagamento = document.getElementById("pagamento");
-  const inputParcelas = document.getElementById("parcelas");
-  const fornecedorSelect = document.getElementById("fornecedorSelect");
+    const form = document.getElementById("formCompras");
+    const tabela = document.getElementById("tabelaCompras");
+    const selectPagamento = document.getElementById("pagamento");
+    const inputParcelas = document.getElementById("parcelas");
+    const fornecedorSelect = document.getElementById("fornecedorSelect");
 
-  let compras = [];
-  let fornecedores = [];
-  let editandoId = null;
+    let compras = [];
+    let fornecedores = [];
+    let editandoId = null;
 
-  function formatarDataBR(dataISO) {
-    return new Date(dataISO).toLocaleDateString('pt-BR');
-  }
+    function formatarDataBR(dataISO) {
+      return new Date(dataISO).toLocaleDateString('pt-BR');
+    }
 
-  selectPagamento.addEventListener("change", () => {
-    inputParcelas.style.display = selectPagamento.value === "aprazo" ? "inline" : "none";
-  });
+    selectPagamento.addEventListener("change", () => {
+      inputParcelas.style.display = selectPagamento.value === "aprazo" ? "inline" : "none";
+    });
 
-  function gerarParcelas(valorTotal, numParcelas, dataCompra) {
-    const parcelas = [];
-    const valorParcela = parseFloat((valorTotal / numParcelas).toFixed(2));
-    for (let i = 0; i < numParcelas; i++) {
-      const vencimento = new Date(dataCompra);
-      vencimento.setMonth(vencimento.getMonth() + i + 1);
-      parcelas.push({
-        numero: i + 1,
-        valor: valorParcela,
-        status: "em aberto",
-        vencimento: vencimento.toISOString().split("T")[0]
+    function gerarParcelas(valorTotal, numParcelas, dataCompra) {
+      const parcelas = [];
+      const valorParcela = parseFloat((valorTotal / numParcelas).toFixed(2));
+      for (let i = 0; i < numParcelas; i++) {
+        const vencimento = new Date(dataCompra);
+        vencimento.setMonth(vencimento.getMonth() + i + 1);
+        parcelas.push({
+          numero: i + 1,
+          valor: valorParcela,
+          status: "em aberto",
+          vencimento: vencimento.toISOString().split("T")[0]
+        });
+      }
+      return parcelas;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const data = document.getElementById("data").value;
+      const fornecedor = fornecedorSelect.value;
+      const produto = document.getElementById("produto").value;
+      const quantidade = parseInt(document.getElementById("quantidade").value);
+      const valor = parseFloat(document.getElementById("valor").value);
+      const pagamento = selectPagamento.value;
+      const parcelas = pagamento === "aprazo" ? parseInt(inputParcelas.value) || 1 : 1;
+
+      const compra = { data, fornecedor, produto, quantidade, valor, pagamento };
+
+      if (pagamento === "aprazo") {
+        const total = quantidade * valor;
+        compra.parcelas = parcelas;
+        compra.parcelasDetalhes = gerarParcelas(total, parcelas, data);
+      }
+
+      if (editandoId) {
+        await atualizarNoFirestore("compras", editandoId, compra);
+        editandoId = null;
+      } else {
+        await salvarNoFirestore("compras", compra);
+      }
+
+      form.reset();
+      inputParcelas.style.display = "none";
+      await carregarCompras();
+    });
+
+    async function carregarCompras() {
+      compras = await carregarDoFirestore("compras");
+      tabela.innerHTML = "";
+      compras.forEach((c, i) => {
+        const total = c.valor * c.quantidade;
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${formatarDataBR(c.data)}</td>
+          <td>${c.fornecedor}</td>
+          <td>${c.produto}</td>
+          <td>${c.quantidade}</td>
+          <td>R$ ${c.valor.toFixed(2)}</td>
+          <td>${c.pagamento}</td>
+          <td>R$ ${total.toFixed(2)}</td>
+          <td>
+            <button class="btn editar" onclick="editarCompra('${c.id}')">Editar</button>
+            <button class="btn excluir" onclick="excluirCompra('${c.id}')">Excluir</button>
+          </td>
+        `;
+        tabela.appendChild(row);
       });
     }
-    return parcelas;
-  }
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+    window.editarCompra = (id) => {
+      const compra = compras.find(c => c.id === id);
+      if (!compra) return;
+      document.getElementById("data").value = compra.data;
+      fornecedorSelect.value = compra.fornecedor;
+      document.getElementById("produto").value = compra.produto;
+      document.getElementById("quantidade").value = compra.quantidade;
+      document.getElementById("valor").value = compra.valor;
+      document.getElementById("pagamento").value = compra.pagamento;
+      inputParcelas.style.display = compra.pagamento === "aprazo" ? "inline" : "none";
+      document.getElementById("parcelas").value = compra.parcelas || "";
+      editandoId = id;
+    };
 
-    const data = document.getElementById("data").value;
-    const fornecedor = fornecedorSelect.value;
-    const produto = document.getElementById("produto").value;
-    const quantidade = parseInt(document.getElementById("quantidade").value);
-    const valor = parseFloat(document.getElementById("valor").value);
-    const pagamento = selectPagamento.value;
-    const parcelas = pagamento === "aprazo" ? parseInt(inputParcelas.value) || 1 : 1;
+    window.excluirCompra = async (id) => {
+      await removerDoFirestore("compras", id);
+      await carregarCompras();
+    };
 
-    const compra = { data, fornecedor, produto, quantidade, valor, pagamento };
-
-    if (pagamento === "aprazo") {
-      const total = quantidade * valor;
-      compra.parcelas = parcelas;
-      compra.parcelasDetalhes = gerarParcelas(total, parcelas, data);
+    async function carregarFornecedores() {
+      fornecedores = await carregarDoFirestore("fornecedores");
+      fornecedorSelect.innerHTML = '<option value="">Selecione um fornecedor</option>';
+      fornecedores.forEach(f => {
+        const opt = document.createElement("option");
+        opt.value = f.nome;
+        opt.textContent = `${f.nome} - ${f.telefone || ""}`;
+        fornecedorSelect.appendChild(opt);
+      });
     }
 
-    if (editandoId) {
-      await atualizarNoFirestore("compras", editandoId, compra);
-      editandoId = null;
-    } else {
-      await salvarNoFirestore("compras", compra);
+    function abrirModalFornecedor() {
+      document.getElementById("modalFornecedor").style.display = "block";
     }
 
-    form.reset();
-    inputParcelas.style.display = "none";
-    await carregarCompras();
-  });
-
-  async function carregarCompras() {
-    compras = await carregarDoFirestore("compras");
-    tabela.innerHTML = "";
-    compras.forEach((c, i) => {
-      const total = c.valor * c.quantidade;
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${formatarDataBR(c.data)}</td>
-        <td>${c.fornecedor}</td>
-        <td>${c.produto}</td>
-        <td>${c.quantidade}</td>
-        <td>R$ ${c.valor.toFixed(2)}</td>
-        <td>${c.pagamento}</td>
-        <td>R$ ${total.toFixed(2)}</td>
-        <td>
-          <button class="btn editar" onclick="editarCompra('${c.id}')">Editar</button>
-          <button class="btn excluir" onclick="excluirCompra('${c.id}')">Excluir</button>
-        </td>
-      `;
-      tabela.appendChild(row);
-    });
-  }
-
-  window.editarCompra = (id) => {
-    const compra = compras.find(c => c.id === id);
-    if (!compra) return;
-    document.getElementById("data").value = compra.data;
-    fornecedorSelect.value = compra.fornecedor;
-    document.getElementById("produto").value = compra.produto;
-    document.getElementById("quantidade").value = compra.quantidade;
-    document.getElementById("valor").value = compra.valor;
-    document.getElementById("pagamento").value = compra.pagamento;
-    inputParcelas.style.display = compra.pagamento === "aprazo" ? "inline" : "none";
-    document.getElementById("parcelas").value = compra.parcelas || "";
-    editandoId = id;
-  };
-
-  window.excluirCompra = async (id) => {
-    await removerDoFirestore("compras", id);
-    await carregarCompras();
-  };
-
-  // FORNECEDORES
-  async function carregarFornecedores() {
-    fornecedores = await carregarDoFirestore("fornecedores");
-    fornecedorSelect.innerHTML = '<option value="">Selecione um fornecedor</option>';
-    fornecedores.forEach(f => {
-      const opt = document.createElement("option");
-      opt.value = f.nome;
-      opt.textContent = `${f.nome} - ${f.telefone || ""}`;
-      fornecedorSelect.appendChild(opt);
-    });
-  }
-
-  window.abrirModalFornecedor = () => {
-    document.getElementById("modalFornecedor").style.display = "block";
-  };
-
-  window.fecharModalFornecedor = () => {
-    document.getElementById("modalFornecedor").style.display = "none";
-    document.getElementById("novoFornecedor").value = "";
-    document.getElementById("novoTelefoneFornecedor").value = "";
-  };
-
-  window.salvarNovoFornecedor = async () => {
-    const nome = document.getElementById("novoFornecedor").value.trim();
-    const telefone = document.getElementById("novoTelefoneFornecedor").value.trim();
-    if (!nome) {
-      alert("Informe o nome do fornecedor.");
-      return;
+    function fecharModalFornecedor() {
+      document.getElementById("modalFornecedor").style.display = "none";
+      document.getElementById("novoFornecedor").value = "";
+      document.getElementById("novoTelefoneFornecedor").value = "";
     }
-    await salvarNoFirestore("fornecedores", { nome, telefone });
+
+    async function salvarNovoFornecedor() {
+      const nome = document.getElementById("novoFornecedor").value.trim();
+      const telefone = document.getElementById("novoTelefoneFornecedor").value.trim();
+      if (!nome) {
+        alert("Informe o nome do fornecedor.");
+        return;
+      }
+      await salvarNoFirestore("fornecedores", { nome, telefone });
+      await carregarFornecedores();
+      fecharModalFornecedor();
+    }
+
+    // Eventos dos botões
+    document.getElementById("btnAbrirModalFornecedor").addEventListener("click", abrirModalFornecedor);
+    document.getElementById("btnFecharModalFornecedor").addEventListener("click", fecharModalFornecedor);
+    document.getElementById("btnSalvarFornecedor").addEventListener("click", salvarNovoFornecedor);
+
+    // Início
     await carregarFornecedores();
-    fecharModalFornecedor();
-  };
+    await carregarCompras();
+  </script>
 
-  await carregarFornecedores();
-  await carregarCompras();
-</script>
+</body>
+</html>
