@@ -21,7 +21,7 @@
       <a href="contas-pagar.html">📤 Contas a Pagar</a>
       <a href="despesas.html">💸 Despesas</a>
       <a href="estoque.html">📦 Estoque</a>
-      <a href="DRE.html">📊 DRE</a>
+      <a href="dre.html">📊 DRE</a>
     </nav>
   </aside>
 
@@ -50,29 +50,39 @@
       const compras = await carregarDoFirestore("compras");
       const produtos = {};
 
-      compras.forEach(c => {
-        const nome = c.produto;
+      compras.forEach(compra => {
+        const nome = compra.produto || "Sem nome";
+        const quantidade = parseFloat(compra.quantidade || 0);
+        const valor = parseFloat(compra.valor || 0);
+        const lucro = parseFloat(compra.porcentagemLucro || 0);
+
         if (!produtos[nome]) {
           produtos[nome] = {
-            total: 0,
             quantidade: 0,
-            lucro: c.porcentagemLucro || 0
+            total: 0,
+            lucro: lucro
           };
         }
 
-        produtos[nome].quantidade += c.quantidade;
-        produtos[nome].total += c.valor * c.quantidade;
-        produtos[nome].lucro = c.porcentagemLucro || produtos[nome].lucro;
+        produtos[nome].quantidade += quantidade;
+        produtos[nome].total += valor * quantidade;
+
+        // Atualiza lucro se não existir (mantém o primeiro valor registrado)
+        if (!produtos[nome].lucro) {
+          produtos[nome].lucro = lucro;
+        }
       });
 
-      Object.entries(produtos).forEach(([nome, p]) => {
-        const media = p.quantidade ? (p.total / p.quantidade) : 0;
+      const produtosOrdenados = Object.entries(produtos).sort((a, b) => a[0].localeCompare(b[0]));
+
+      produtosOrdenados.forEach(([nome, dados]) => {
+        const media = dados.quantidade ? dados.total / dados.quantidade : 0;
         const row = document.createElement("tr");
         row.innerHTML = `
           <td>${nome}</td>
-          <td>${p.quantidade}</td>
+          <td>${dados.quantidade}</td>
           <td>R$ ${media.toFixed(2)}</td>
-          <td>${p.lucro}%</td>
+          <td>${dados.lucro.toFixed(1)}%</td>
         `;
         tabela.appendChild(row);
       });
