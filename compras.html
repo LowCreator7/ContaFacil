@@ -246,6 +246,34 @@
 
   await atualizarFornecedores();
   await carregarCompras();
+
+  // Funções do modal de fornecedor
+  window.abrirModalFornecedor = () => {
+    document.getElementById("modalFornecedor").style.display = "block";
+  }
+
+  window.fecharModalFornecedor = () => {
+    document.getElementById("modalFornecedor").style.display = "none";
+    document.getElementById("novoFornecedorNome").value = "";
+    document.getElementById("novoFornecedorTelefone").value = "";
+  }
+
+  window.salvarNovoFornecedor = async () => {
+    const nome = document.getElementById("novoFornecedorNome").value.trim();
+    const telefone = document.getElementById("novoFornecedorTelefone").value.trim();
+    const userId = auth.currentUser?.uid;
+
+    if (!nome || !userId) {
+      alert("Preencha o nome do fornecedor.");
+      return;
+    }
+
+    await salvarNoFirestore("fornecedores", { nome, telefone, userId });
+
+    fecharModalFornecedor();
+    await atualizarFornecedores();
+  }
+
 </script>
 </body>
 </html>
