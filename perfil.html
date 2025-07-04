@@ -74,7 +74,7 @@
     document.getElementById("btnLogout").addEventListener("click", () => {
   signOut(auth)
     .then(() => {
-      location.replace("login.html");  // Evita voltar para a página anterior
+      location.replace("index.html"); // ← redireciona exatamente para sua tela de login
     })
     .catch((error) => {
       console.error("Erro ao sair:", error);
