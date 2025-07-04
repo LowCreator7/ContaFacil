@@ -11,7 +11,6 @@
   <aside class="sidebar">
     <h2>🏭 Fornecedores</h2>
     <nav>
-      <a href="perfil.html">⚙️ Meu Perfil</a>
       <a href="dashboard.html">🏠 Dashboard</a>
       <a href="compras.html">🛒 Compras</a>
       <a href="vendas.html">💰 Vendas</a>
@@ -40,34 +39,25 @@
   </main>
 
   <script type="module">
-  import { auth, carregarDoFirestore } from './script-firebase.js';
+    import { carregarDoFirestore } from './script-firebase.js';
 
-  const tabela = document.getElementById("tabelaFornecedores");
+    const tabela = document.getElementById("tabelaFornecedores");
 
-  async function carregarFornecedores() {
-    const user = auth.currentUser;
-    if (!user) {
-      alert("Usuário não autenticado.");
-      return;
+    async function carregarFornecedores() {
+      const fornecedores = await carregarDoFirestore("fornecedores");
+
+      fornecedores.forEach(f => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${f.nome}</td>
+          <td>${f.telefone || '-'}</td>
+        `;
+        tabela.appendChild(row);
+      });
     }
 
-    const base = `usuarios/${user.uid}/fornecedores`;
-    const fornecedores = await carregarDoFirestore(base);
-
-    tabela.innerHTML = "";
-
-    fornecedores.forEach(f => {
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${f.nome}</td>
-        <td>${f.telefone || '-'}</td>
-      `;
-      tabela.appendChild(row);
-    });
-  }
-
-  carregarFornecedores();
-</script>
+    carregarFornecedores();
+  </script>
 
 </body>
 </html>
