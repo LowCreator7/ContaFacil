@@ -45,10 +45,7 @@
   </main>
 
   <script type="module">
-  import {
-    auth,
-    carregarDoFirestore
-  } from './script-firebase.js';
+  import { carregarDoFirestore } from './script-firebase.js';
 
   function formatar(valor) {
     return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -57,19 +54,11 @@
   function gerarDRE() {
     const inicio = new Date(document.getElementById('dataInicio').value);
     const fim = new Date(document.getElementById('dataFim').value);
-    const user = auth.currentUser;
-
-    if (!user) {
-      alert("Usuário não autenticado.");
-      return;
-    }
-
-    const base = `usuarios/${user.uid}/`;
 
     Promise.all([
-      carregarDoFirestore(base + 'compras'),
-      carregarDoFirestore(base + 'vendas'),
-      carregarDoFirestore(base + 'despesas')
+      carregarDoFirestore('compras'),
+      carregarDoFirestore('vendas'),
+      carregarDoFirestore('despesas')
     ]).then(([compras, vendas, despesas]) => {
       let estoqueInicial = 0, estoqueFinal = 0, totalCompras = 0, totalVendas = 0, totalDespesas = 0;
       const categoriasDespesas = {};
@@ -125,6 +114,6 @@
 
   window.gerarDRE = gerarDRE;
 </script>
-
+  
 </body>
 </html>
