@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Clientes</title>
   <link rel="stylesheet" href="estilo.css">
@@ -22,12 +22,13 @@
       <a href="contas-pagar.html">📤 Contas a Pagar</a>
       <a href="despesas.html">💸 Despesas</a>
       <a href="estoque.html">📦 Estoque</a>
-      <a href="DRE.html">📊 DRE</a>
+      <a href="dre.html">📊 DRE</a>
     </nav>
   </aside>
 
   <main class="main">
     <h2>Clientes Cadastrados</h2>
+    <button id="btnAbrirModalCliente">+ Novo Cliente</button>
 
     <table>
       <thead>
@@ -40,14 +41,27 @@
     </table>
   </main>
 
+  <!-- Modal Cliente -->
+  <div id="modalCliente" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%);
+    background:#fff; padding:20px; box-shadow:0 0 10px rgba(0,0,0,0.3); border-radius:10px; z-index:999;">
+    <h3>Novo Cliente</h3>
+    <input type="text" id="novoCliente" placeholder="Nome" required><br><br>
+    <input type="text" id="novoTelefoneCliente" placeholder="Telefone"><br><br>
+    <button id="btnSalvarCliente">Salvar</button>
+    <button id="btnFecharModalCliente">Cancelar</button>
+  </div>
+
   <script type="module">
-    import { carregarDoFirestore } from './script-firebase.js';
+    import {
+      carregarDoFirestore,
+      salvarNoFirestore
+    } from './script-firebase.js';
 
     const tabela = document.getElementById("tabelaClientes");
 
     async function carregarClientes() {
+      tabela.innerHTML = "";
       const clientes = await carregarDoFirestore("clientes");
-
       clientes.forEach(c => {
         const row = document.createElement("tr");
         row.innerHTML = `
@@ -58,6 +72,34 @@
       });
     }
 
+    function abrirModalCliente() {
+      document.getElementById("modalCliente").style.display = "block";
+    }
+
+    function fecharModalCliente() {
+      document.getElementById("modalCliente").style.display = "none";
+      document.getElementById("novoCliente").value = "";
+      document.getElementById("novoTelefoneCliente").value = "";
+    }
+
+    async function salvarNovoCliente() {
+      const nome = document.getElementById("novoCliente").value.trim();
+      const telefone = document.getElementById("novoTelefoneCliente").value.trim();
+      if (!nome) {
+        alert("Informe o nome do cliente.");
+        return;
+      }
+      await salvarNoFirestore("clientes", { nome, telefone });
+      await carregarClientes();
+      fecharModalCliente();
+    }
+
+    // Eventos
+    document.getElementById("btnAbrirModalCliente").addEventListener("click", abrirModalCliente);
+    document.getElementById("btnFecharModalCliente").addEventListener("click", fecharModalCliente);
+    document.getElementById("btnSalvarCliente").addEventListener("click", salvarNovoCliente);
+
+    // Inicialização
     carregarClientes();
   </script>
 
