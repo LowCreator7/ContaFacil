@@ -2,21 +2,21 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Vendas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Clientes</title>
   <link rel="stylesheet" href="estilo.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
 </head>
 <body>
 
   <aside class="sidebar">
-    <h2>💰 Vendas</h2>
+    <h2>👤 Clientes</h2>
     <nav>
-      <a href="perfil.html">⚙️ Meu Perfil</a>
       <a href="dashboard.html">🏠 Dashboard</a>
       <a href="compras.html">🛒 Compras</a>
-      <a href="vendas.html" class="active">💰 Vendas</a>
+      <a href="vendas.html">💰 Vendas</a>
       <a href="produtos.html">📄 Produtos</a>
-      <a href="clientes.html">👤 Clientes</a>
+      <a href="clientes.html" class="active">👤 Clientes</a>
       <a href="fornecedores.html">🏭 Fornecedores</a>
       <a href="contas-receber-simples.html">📥 Contas a Receber</a>
       <a href="contas-pagar.html">📤 Contas a Pagar</a>
@@ -27,255 +27,81 @@
   </aside>
 
   <main class="main">
-    <h2>Registro de Vendas</h2>
-
-    <form id="formVendas">
-      <input type="date" id="data" required>
-
-      <div style="display: flex; gap: 10px; align-items: center;">
-        <select id="clienteSelect" required style="flex: 1;">
-          <option value="">Selecione um cliente</option>
-        </select>
-        <button type="button" onclick="abrirModalCliente()">+ Novo Cliente</button>
-      </div>
-
-      <div style="display: flex; gap: 10px; align-items: center;">
-        <select id="produtoSelect" required style="flex: 1;">
-          <option value="">Selecione um produto</option>
-        </select>
-      </div>
-
-      <input type="number" id="quantidade" placeholder="Qtd" required>
-      <input type="number" id="valor" placeholder="Valor Unitário (R$)" required>
-      
-      <select id="pagamento" required>
-        <option value="">Pagamento</option>
-        <option value="avista">À vista</option>
-        <option value="aprazo">A prazo</option>
-      </select>
-
-      <input type="number" id="parcelas" placeholder="Parcelas" style="display:none;">
-      <button type="submit">Salvar</button>
-    </form>
+    <h2>Clientes Cadastrados</h2>
+    <button id="btnAbrirModalCliente">+ Novo Cliente</button>
 
     <table>
       <thead>
         <tr>
-          <th>Data</th>
-          <th>Cliente</th>
-          <th>Produto</th>
-          <th>Qtd</th>
-          <th>Valor Unit.</th>
-          <th>Pagamento</th>
-          <th>Total</th>
-          <th>Ações</th>
+          <th>Nome</th>
+          <th>Telefone</th>
         </tr>
       </thead>
-      <tbody id="tabelaVendas"></tbody>
+      <tbody id="tabelaClientes"></tbody>
     </table>
   </main>
 
-  <!-- Modal para novo cliente -->
+  <!-- Modal Cliente -->
   <div id="modalCliente" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%);
     background:#fff; padding:20px; box-shadow:0 0 10px rgba(0,0,0,0.3); border-radius:10px; z-index:999;">
     <h3>Novo Cliente</h3>
-    <input type="text" id="novoNome" placeholder="Nome" required><br><br>
-    <input type="text" id="novoTelefone" placeholder="Telefone" required><br><br>
-    <button onclick="salvarNovoCliente()">Salvar</button>
-    <button onclick="fecharModalCliente()">Cancelar</button>
+    <input type="text" id="novoCliente" placeholder="Nome" required><br><br>
+    <input type="text" id="novoTelefoneCliente" placeholder="Telefone"><br><br>
+    <button id="btnSalvarCliente">Salvar</button>
+    <button id="btnFecharModalCliente">Cancelar</button>
   </div>
 
   <script type="module">
-  import {
-    carregarDoFirestore,
-    salvarNoFirestore,
-    atualizarNoFirestore,
-    removerDoFirestore
-  } from './script-firebase.js';
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import {
+      carregarDoFirestore,
+      salvarNoFirestore
+    } from './script-firebase.js';
 
-  const auth = getAuth();
+    const tabela = document.getElementById("tabelaClientes");
 
-  let vendas = [];
-  let uid = null;
-  let editandoId = null;
-
-  const form = document.getElementById("formVendas");
-  const tabela = document.getElementById("tabelaVendas");
-  const selectPagamento = document.getElementById("pagamento");
-  const inputParcelas = document.getElementById("parcelas");
-  const clienteSelect = document.getElementById("clienteSelect");
-  const produtoSelect = document.getElementById("produtoSelect");
-
-  function formatarDataBR(dataISO) {
-    return new Date(dataISO).toLocaleDateString('pt-BR');
-  }
-
-  selectPagamento.addEventListener("change", () => {
-    inputParcelas.style.display = selectPagamento.value === "aprazo" ? "inline" : "none";
-  });
-
-  function gerarParcelas(valorTotal, numParcelas, dataVenda) {
-    const parcelas = [];
-    const valorParcela = parseFloat((valorTotal / numParcelas).toFixed(2));
-    for (let i = 0; i < numParcelas; i++) {
-      const vencimento = new Date(dataVenda);
-      vencimento.setMonth(vencimento.getMonth() + i + 1);
-      parcelas.push({
-        numero: i + 1,
-        valor: valorParcela,
-        status: 'em aberto',
-        vencimento: vencimento.toISOString().split('T')[0]
+    async function carregarClientes() {
+      tabela.innerHTML = "";
+      const clientes = await carregarDoFirestore("clientes");
+      clientes.forEach(c => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${c.nome}</td>
+          <td>${c.telefone}</td>
+        `;
+        tabela.appendChild(row);
       });
     }
-    return parcelas;
-  }
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const data = document.getElementById("data").value;
-    const cliente = clienteSelect.value;
-    const produto = produtoSelect.value;
-    const quantidade = parseInt(document.getElementById("quantidade").value);
-    const valor = parseFloat(document.getElementById("valor").value);
-    const pagamento = selectPagamento.value;
-    const parcelas = pagamento === "aprazo" ? parseInt(inputParcelas.value) || 1 : 1;
-
-    if (!data || !cliente || !produto || !quantidade || !valor || !pagamento) {
-      alert("Preencha todos os campos obrigatórios.");
-      return;
+    function abrirModalCliente() {
+      document.getElementById("modalCliente").style.display = "block";
     }
 
-    let venda = { data, cliente, produto, quantidade, valor, pagamento };
-
-    if (pagamento === "aprazo") {
-      const total = quantidade * valor;
-      venda.parcelas = parcelas;
-      venda.parcelasDetalhes = gerarParcelas(total, parcelas, data);
+    function fecharModalCliente() {
+      document.getElementById("modalCliente").style.display = "none";
+      document.getElementById("novoCliente").value = "";
+      document.getElementById("novoTelefoneCliente").value = "";
     }
 
-    const caminho = `usuarios/${uid}/vendas`;
-
-    if (editandoId) {
-      await atualizarNoFirestore(caminho, editandoId, venda);
-      editandoId = null;
-    } else {
-      await salvarNoFirestore(caminho, venda);
+    async function salvarNovoCliente() {
+      const nome = document.getElementById("novoCliente").value.trim();
+      const telefone = document.getElementById("novoTelefoneCliente").value.trim();
+      if (!nome) {
+        alert("Informe o nome do cliente.");
+        return;
+      }
+      await salvarNoFirestore("clientes", { nome, telefone });
+      await carregarClientes();
+      fecharModalCliente();
     }
 
-    form.reset();
-    inputParcelas.style.display = "none";
-    await carregarVendas();
-  });
+    // Eventos
+    document.getElementById("btnAbrirModalCliente").addEventListener("click", abrirModalCliente);
+    document.getElementById("btnFecharModalCliente").addEventListener("click", fecharModalCliente);
+    document.getElementById("btnSalvarCliente").addEventListener("click", salvarNovoCliente);
 
-  async function carregarVendas() {
-    const caminho = `usuarios/${uid}/vendas`;
-    vendas = await carregarDoFirestore(caminho);
-    tabela.innerHTML = "";
-    vendas.forEach(v => {
-      const total = v.valor * v.quantidade;
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>${formatarDataBR(v.data)}</td>
-        <td>${v.cliente}</td>
-        <td>${v.produto}</td>
-        <td>${v.quantidade}</td>
-        <td>R$ ${v.valor.toFixed(2)}</td>
-        <td>${v.pagamento}</td>
-        <td>R$ ${total.toFixed(2)}</td>
-        <td>
-          <button class="btn editar" onclick="editarVenda('${v.id}')">Editar</button>
-          <button class="btn excluir" onclick="excluirVenda('${v.id}')">Excluir</button>
-        </td>
-      `;
-      tabela.appendChild(row);
-    });
-  }
-
-  window.editarVenda = (id) => {
-    const v = vendas.find(v => v.id === id);
-    if (!v) return;
-    document.getElementById("data").value = v.data;
-    clienteSelect.value = v.cliente;
-    produtoSelect.value = v.produto;
-    document.getElementById("quantidade").value = v.quantidade;
-    document.getElementById("valor").value = v.valor;
-    selectPagamento.value = v.pagamento;
-    inputParcelas.style.display = v.pagamento === "aprazo" ? "inline" : "none";
-    document.getElementById("parcelas").value = v.parcelas || "";
-    editandoId = id;
-  };
-
-  window.excluirVenda = async (id) => {
-    const caminho = `usuarios/${uid}/vendas`;
-    await removerDoFirestore(caminho, id);
-    await carregarVendas();
-  };
-
-  // Modal Cliente
-  const modalCliente = document.getElementById("modalCliente");
-  window.abrirModalCliente = () => modalCliente.style.display = "block";
-  window.fecharModalCliente = () => {
-    modalCliente.style.display = "none";
-    document.getElementById("novoNome").value = "";
-    document.getElementById("novoTelefone").value = "";
-  };
-
-  window.salvarNovoCliente = async () => {
-    const nome = document.getElementById("novoNome").value.trim();
-    const telefone = document.getElementById("novoTelefone").value.trim();
-    if (!nome || !telefone) {
-      alert("Preencha todos os campos.");
-      return;
-    }
-    const caminho = `usuarios/${uid}/clientes`;
-    await salvarNoFirestore(caminho, { nome, telefone });
-    await atualizarListaClientes();
-    fecharModalCliente();
-  };
-
-  async function atualizarListaClientes() {
-    const caminho = `usuarios/${uid}/clientes`;
-    const clientes = await carregarDoFirestore(caminho);
-    clienteSelect.innerHTML = '<option value="">Selecione um cliente</option>';
-    clientes.forEach(c => {
-      const opt = document.createElement("option");
-      opt.value = c.nome;
-      opt.textContent = `${c.nome} - ${c.telefone}`;
-      clienteSelect.appendChild(opt);
-    });
-  }
-
-  async function atualizarListaProdutos() {
-    const caminho = `usuarios/${uid}/compras`;
-    const compras = await carregarDoFirestore(caminho);
-    const nomesProdutos = [...new Set(compras.map(c => c.produto).filter(Boolean))];
-    produtoSelect.innerHTML = '<option value="">Selecione um produto</option>';
-    nomesProdutos.forEach(nome => {
-      const opt = document.createElement("option");
-      opt.value = nome;
-      opt.textContent = nome;
-      produtoSelect.appendChild(opt);
-    });
-  }
-
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") fecharModalCliente();
-  });
-
-  // Inicia após confirmar usuário logado
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      window.location.href = "login.html";
-      return;
-    }
-    uid = user.uid;
-    await atualizarListaClientes();
-    await atualizarListaProdutos();
-    await carregarVendas();
-  });
-</script>
+    // Inicialização
+    carregarClientes();
+  </script>
 
 </body>
 </html>
