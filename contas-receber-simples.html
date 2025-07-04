@@ -64,9 +64,8 @@
 
   <script type="module">
   import {
-    auth,
     carregarDoFirestore,
-    atualizarCampoFirestore
+    atualizarCampoDoFirestore
   } from './script-firebase.js';
 
   const tabela = document.getElementById("tabelaReceber");
@@ -93,16 +92,13 @@
   };
 
   async function renderizar() {
-    const userId = auth.currentUser?.uid;
-    if (!userId) return;
-
-    vendas = await carregarDoFirestore(`usuarios/${userId}/vendas`);
+    vendas = await carregarDoFirestore("vendas");
     const statusFiltro = filtroStatus.value;
     const inicio = dataInicio.value;
     const fim = dataFim.value;
     tabela.innerHTML = '';
 
-    vendas.forEach((venda) => {
+    vendas.forEach((venda, i) => {
       const total = parseFloat(venda.valor) * parseInt(venda.quantidade);
       const tipoPagamento = venda.pagamento === 'aprazo' ? 'A prazo' : 'À vista';
 
@@ -156,24 +152,18 @@
   }
 
   window.baixarAvista = async (vendaId) => {
-    const userId = auth.currentUser?.uid;
-    if (!userId) return;
-
-    await atualizarCampoFirestore(`usuarios/${userId}/vendas`, vendaId, { status: "recebido" });
+    await atualizarCampoDoFirestore("vendas", vendaId, { status: "recebido" });
     await renderizar();
   };
 
   window.baixarParcela = async (vendaId, parcelaIndex) => {
-    const userId = auth.currentUser?.uid;
-    if (!userId) return;
-
     const venda = vendas.find(v => v.id === vendaId);
     if (!venda || !venda.parcelasDetalhes) return;
 
     const parcelasAtualizadas = [...venda.parcelasDetalhes];
     parcelasAtualizadas[parcelaIndex].status = "recebido";
 
-    await atualizarCampoFirestore(`usuarios/${userId}/vendas`, vendaId, { parcelasDetalhes: parcelasAtualizadas });
+    await atualizarCampoDoFirestore("vendas", vendaId, { parcelasDetalhes: parcelasAtualizadas });
     await renderizar();
   };
 
@@ -181,10 +171,7 @@
   dataInicio.addEventListener("change", renderizar);
   dataFim.addEventListener("change", renderizar);
 
-  auth.onAuthStateChanged(user => {
-    if (user) renderizar();
-    else window.location.href = "login.html";
-  });
+  await renderizar();
 </script>
 
 </body>
