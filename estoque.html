@@ -22,7 +22,7 @@
       <a href="contas-pagar.html">📤 Contas a Pagar</a>
       <a href="despesas.html">💸 Despesas</a>
       <a href="estoque.html" class="active">📦 Estoque</a>
-      <a href="DRE.html">📊 DRE</a>
+      <a href="dre.html">📊 DRE</a>
     </nav>
   </aside>
 
@@ -66,40 +66,50 @@
       renderizarEstoque();
     }
 
-    function renderizarEstoque() {
+    window.renderizarEstoque = function () {
       tabelaEstoque.innerHTML = "";
 
       const produtos = {};
 
+      // Agrupando compras
       compras.forEach(compra => {
         const nome = compra.produto;
+        const qtd = parseInt(compra.quantidade || 0);
+        const valorCompra = parseFloat(compra.valor || 0);
+        const porcentagemLucro = parseFloat(compra.porcentagemLucro || 0);
+        const valorVenda = valorCompra + (valorCompra * porcentagemLucro / 100);
+
         if (!produtos[nome]) {
           produtos[nome] = {
             comprado: 0,
             vendido: 0,
-            valorCompra: compra.valor,
-            valorVenda: 0
+            valorCompra: valorCompra,
+            valorVenda: valorVenda
           };
         }
-        produtos[nome].comprado += compra.quantidade;
-        produtos[nome].valorCompra = compra.valor;
-        if (compra.porcentagemLucro) {
-          produtos[nome].valorVenda = compra.valor + (compra.valor * (compra.porcentagemLucro / 100));
-        }
+
+        produtos[nome].comprado += qtd;
+        produtos[nome].valorCompra = valorCompra;
+        produtos[nome].valorVenda = valorVenda;
       });
 
+      // Agrupando vendas
       vendas.forEach(venda => {
         const nome = venda.produto;
+        const qtd = parseInt(venda.quantidade || 0);
+        const valorVenda = parseFloat(venda.valor || 0);
+
         if (!produtos[nome]) {
           produtos[nome] = {
             comprado: 0,
             vendido: 0,
             valorCompra: 0,
-            valorVenda: venda.valor
+            valorVenda: valorVenda
           };
         }
-        produtos[nome].vendido += venda.quantidade;
-        produtos[nome].valorVenda = venda.valor;
+
+        produtos[nome].vendido += qtd;
+        produtos[nome].valorVenda = valorVenda; // Assume o último valor informado
       });
 
       const filtroValor = parseInt(filtroEstoque.value);
@@ -123,7 +133,7 @@
         `;
         tabelaEstoque.appendChild(row);
       });
-    }
+    };
 
     carregarDados();
   </script>
