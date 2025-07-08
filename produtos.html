@@ -48,15 +48,17 @@
     const tabela = document.getElementById("tabelaProdutos");
 
     async function carregarProdutos() {
-      const compras = await carregarDoFirestore("compras");
-      const produtos = {};
+      const compras = await carregarDoFirestore("compras"); // Carrega os dados da coleção 'compras'
+      const produtos = {};  // Objeto para agrupar os produtos
 
       compras.forEach(compra => {
+        // Garante que o produto tem dados válidos
         const nome = compra.produto || "Sem nome";
         const quantidade = parseFloat(compra.quantidade || 0);
         const valor = parseFloat(compra.valor || 0);
         const lucro = parseFloat(compra.porcentagemLucro || 0);
 
+        // Verifica se o produto já foi registrado e acumula os dados
         if (!produtos[nome]) {
           produtos[nome] = {
             quantidade: 0,
@@ -68,16 +70,18 @@
         produtos[nome].quantidade += quantidade;
         produtos[nome].total += valor * quantidade;
 
-        // Atualiza lucro se não existir (mantém o primeiro valor registrado)
-        if (!produtos[nome].lucro) {
+        // Atualiza lucro apenas se ainda não existir
+        if (produtos[nome].lucro === 0) {
           produtos[nome].lucro = lucro;
         }
       });
 
+      // Ordena os produtos por nome
       const produtosOrdenados = Object.entries(produtos).sort((a, b) => a[0].localeCompare(b[0]));
 
+      // Exibe os dados na tabela
       produtosOrdenados.forEach(([nome, dados]) => {
-        const media = dados.quantidade ? dados.total / dados.quantidade : 0;
+        const media = dados.quantidade ? dados.total / dados.quantidade : 0; // Calcula o valor médio
         const row = document.createElement("tr");
         row.innerHTML = `
           <td>${nome}</td>
@@ -89,7 +93,7 @@
       });
     }
 
-    carregarProdutos();
+    carregarProdutos();  // Chama a função para carregar e exibir os produtos
   </script>
 </body>
 </html>
