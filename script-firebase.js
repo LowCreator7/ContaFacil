@@ -25,20 +25,35 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 
-// 💾 Salvar no Firestore
+// 💾 Salvar no Firestore - agora com base no UID do usuário
 export async function salvarNoFirestore(caminho, dados) {
+  const user = firebase.auth().currentUser;  // Obtém o usuário autenticado
+  if (!user) {
+    console.error("Usuário não autenticado.");
+    return;
+  }
+
   try {
-    await addDoc(collection(db, caminho), dados);
+    // Criando um caminho único para cada usuário
+    const userRef = collection(db, 'usuarios', user.uid, caminho);
+    await addDoc(userRef, dados);
     console.log("Salvo com sucesso em", caminho);
   } catch (e) {
     console.error("Erro ao salvar:", e);
   }
 }
 
-// 📥 Carregar do Firestore
+// 📥 Carregar do Firestore - agora com base no UID do usuário
 export async function carregarDoFirestore(caminho) {
+  const user = firebase.auth().currentUser;  // Obtém o usuário autenticado
+  if (!user) {
+    console.error("Usuário não autenticado.");
+    return [];
+  }
+
   try {
-    const querySnapshot = await getDocs(collection(db, caminho));
+    const userRef = collection(db, 'usuarios', user.uid, caminho);
+    const querySnapshot = await getDocs(userRef);
     const lista = [];
     querySnapshot.forEach((doc) => {
       lista.push({ id: doc.id, ...doc.data() });
