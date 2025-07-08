@@ -72,8 +72,8 @@
   const contasReceber = [];
   const contasPagar = [];
 
-  const vendas = await carregarDoFirestore('vendas');
-  const compras = await carregarDoFirestore('compras');
+  const vendas = await carregarVendas('vendas');
+  const compras = await carregarCompras('compras');
 
   let totalVendas = 0;
   let totalReceber = 0;
