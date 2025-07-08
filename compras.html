@@ -71,8 +71,7 @@
   </main>
 
   <!-- Modal Fornecedor -->
-  <div id="modalFornecedor" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%);
-    background:#fff; padding:20px; box-shadow:0 0 10px rgba(0,0,0,0.3); border-radius:10px; z-index:999;">
+  <div id="modalFornecedor" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%); background:#fff; padding:20px; box-shadow:0 0 10px rgba(0,0,0,0.3); border-radius:10px; z-index:999;">
     <h3>Novo Fornecedor</h3>
     <input type="text" id="novoFornecedor" placeholder="Nome" required><br><br>
     <input type="text" id="novoTelefoneFornecedor" placeholder="Telefone"><br><br>
@@ -81,12 +80,7 @@
   </div>
 
   <script type="module">
-    import {
-      carregarDoFirestore,
-      salvarNoFirestore,
-      atualizarNoFirestore,
-      removerDoFirestore
-    } from './script-firebase.js';
+    import { carregarDoFirestore, salvarNoFirestore, atualizarNoFirestore, removerDoFirestore } from './script-firebase.js';
 
     const form = document.getElementById("formCompras");
     const tabela = document.getElementById("tabelaCompras");
@@ -98,14 +92,17 @@
     let fornecedores = [];
     let editandoId = null;
 
+    // Função para formatar data
     function formatarDataBR(dataISO) {
       return new Date(dataISO).toLocaleDateString('pt-BR');
     }
 
+    // Exibição de parcelas se o pagamento for "A prazo"
     selectPagamento.addEventListener("change", () => {
       inputParcelas.style.display = selectPagamento.value === "aprazo" ? "inline" : "none";
     });
 
+    // Função para gerar parcelas
     function gerarParcelas(valorTotal, numParcelas, dataCompra) {
       const parcelas = [];
       const valorParcela = parseFloat((valorTotal / numParcelas).toFixed(2));
@@ -122,6 +119,7 @@
       return parcelas;
     }
 
+    // Função para salvar a compra no Firestore
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
@@ -153,6 +151,7 @@
       await carregarCompras();
     });
 
+    // Função para carregar as compras e exibir na tabela
     async function carregarCompras() {
       compras = await carregarDoFirestore("compras");
       tabela.innerHTML = "";
@@ -176,6 +175,7 @@
       });
     }
 
+    // Função para editar uma compra
     window.editarCompra = (id) => {
       const compra = compras.find(c => c.id === id);
       if (!compra) return;
@@ -190,11 +190,13 @@
       editandoId = id;
     };
 
+    // Função para excluir uma compra
     window.excluirCompra = async (id) => {
       await removerDoFirestore("compras", id);
       await carregarCompras();
     };
 
+    // Função para carregar os fornecedores
     async function carregarFornecedores() {
       fornecedores = await carregarDoFirestore("fornecedores");
       fornecedorSelect.innerHTML = '<option value="">Selecione um fornecedor</option>';
@@ -206,6 +208,7 @@
       });
     }
 
+    // Funções para abrir e fechar o modal de fornecedor
     function abrirModalFornecedor() {
       document.getElementById("modalFornecedor").style.display = "block";
     }
@@ -216,6 +219,7 @@
       document.getElementById("novoTelefoneFornecedor").value = "";
     }
 
+    // Função para salvar um novo fornecedor
     async function salvarNovoFornecedor() {
       const nome = document.getElementById("novoFornecedor").value.trim();
       const telefone = document.getElementById("novoTelefoneFornecedor").value.trim();
