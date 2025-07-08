@@ -10,6 +10,7 @@ import {
   updateDoc,
   deleteDoc
 } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
 // 🔐 Configure com seus dados do Firebase
 const firebaseConfig = {
@@ -24,10 +25,11 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
+const auth = getAuth(app);  // Agora estamos usando o método correto para a autenticação
 
 // 💾 Salvar no Firestore - agora com base no UID do usuário
 export async function salvarNoFirestore(caminho, dados) {
-  const user = firebase.auth().currentUser;  // Obtém o usuário autenticado
+  const user = auth.currentUser;  // Obtém o usuário autenticado
   if (!user) {
     console.error("Usuário não autenticado.");
     return;
@@ -45,7 +47,7 @@ export async function salvarNoFirestore(caminho, dados) {
 
 // 📥 Carregar do Firestore - agora com base no UID do usuário
 export async function carregarDoFirestore(caminho) {
-  const user = firebase.auth().currentUser;  // Obtém o usuário autenticado
+  const user = auth.currentUser;  // Obtém o usuário autenticado
   if (!user) {
     console.error("Usuário não autenticado.");
     return [];
