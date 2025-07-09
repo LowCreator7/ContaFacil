@@ -148,14 +148,16 @@
 
       form.reset();
       inputParcelas.style.display = "none";
-      await carregarCompras();
+      await carregarCompras();  // Recarrega a tabela após salvar
     });
 
     // Função para carregar as compras e exibir na tabela
     async function carregarCompras() {
       compras = await carregarDoFirestore("compras");
-      tabela.innerHTML = "";
-      compras.forEach((c, i) => {
+      console.log("Compras carregadas:", compras);  // Verifique no console se os dados estão corretos
+      tabela.innerHTML = "";  // Limpa a tabela antes de adicionar novos dados
+
+      compras.forEach((c) => {
         const total = c.valor * c.quantidade;
         const row = document.createElement("tr");
         row.innerHTML = `
