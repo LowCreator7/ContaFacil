@@ -81,7 +81,9 @@
 
   <script type="module">
     import { carregarDoFirestore, salvarNoFirestore, atualizarNoFirestore, removerDoFirestore } from './script-firebase.js';
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
+    const auth = getAuth();  // Firebase Auth
     const form = document.getElementById("formCompras");
     const tabela = document.getElementById("tabelaCompras");
     const selectPagamento = document.getElementById("pagamento");
@@ -139,11 +141,20 @@
         compra.parcelasDetalhes = gerarParcelas(total, parcelas, data);
       }
 
+      const user = auth.currentUser;
+      if (!user) {
+        console.error("Usuário não autenticado");
+        return;
+      }
+
+      const userId = user.uid;
+      const caminho = `usuarios/${userId}/compras`;  // Acesso à coleção do usuário
+
       if (editandoId) {
-        await atualizarNoFirestore("compras", editandoId, compra);
+        await atualizarNoFirestore(caminho, editandoId, compra);
         editandoId = null;
       } else {
-        await salvarNoFirestore("compras", compra);
+        await salvarNoFirestore(caminho, compra);
       }
 
       form.reset();
@@ -153,7 +164,16 @@
 
     // Função para carregar as compras e exibir na tabela
     async function carregarCompras() {
-      compras = await carregarDoFirestore("compras");
+      const user = auth.currentUser;
+      if (!user) {
+        console.error("Usuário não autenticado.");
+        return;
+      }
+
+      const userId = user.uid;
+      const caminho = `usuarios/${userId}/compras`;  // Acesso à coleção do usuário
+
+      compras = await carregarDoFirestore(caminho);
       console.log("Compras carregadas:", compras);  // Verifique no console se os dados estão corretos
       tabela.innerHTML = "";  // Limpa a tabela antes de adicionar novos dados
 
@@ -194,13 +214,29 @@
 
     // Função para excluir uma compra
     window.excluirCompra = async (id) => {
-      await removerDoFirestore("compras", id);
+      const user = auth.currentUser;
+      if (!user) {
+        console.error("Usuário não autenticado.");
+        return;
+      }
+
+      const userId = user.uid;
+      const caminho = `usuarios/${userId}/compras`;  // Acesso à coleção do usuário
+      await removerDoFirestore(caminho, id);
       await carregarCompras();
     };
 
     // Função para carregar os fornecedores
     async function carregarFornecedores() {
-      fornecedores = await carregarDoFirestore("fornecedores");
+      const user = auth.currentUser;
+      if (!user) {
+        console.error("Usuário não autenticado.");
+        return;
+      }
+
+      const userId = user.uid;
+      const caminho = `usuarios/${userId}/fornecedores`;  // Acesso à coleção de fornecedores do usuário
+      fornecedores = await carregarDoFirestore(caminho);
       fornecedorSelect.innerHTML = '<option value="">Selecione um fornecedor</option>';
       fornecedores.forEach(f => {
         const opt = document.createElement("option");
@@ -229,7 +265,15 @@
         alert("Informe o nome do fornecedor.");
         return;
       }
-      await salvarNoFirestore("fornecedores", { nome, telefone });
+      const user = auth.currentUser;
+      if (!user) {
+        console.error("Usuário não autenticado.");
+        return;
+      }
+
+      const userId = user.uid;
+      const caminho = `usuarios/${userId}/fornecedores`;  // Acesso à coleção de fornecedores do usuário
+      await salvarNoFirestore(caminho, { nome, telefone });
       await carregarFornecedores();
       fecharModalFornecedor();
     }
