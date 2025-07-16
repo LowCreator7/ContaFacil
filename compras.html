@@ -5,6 +5,7 @@
   <title>Compras</title>
   <link rel="stylesheet" href="estilo.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script> <!-- CDN para a biblioteca xlsx -->
 </head>
 <body>
 
@@ -29,6 +30,7 @@
   <main class="main">
     <h2>Registro de Compras</h2>
 
+    <!-- Formulário de Compras -->
     <form id="formCompras">
       <input type="date" id="data" required>
 
@@ -53,6 +55,13 @@
       <button type="submit">Salvar</button>
     </form>
 
+    <!-- Campo de Importação de Arquivo XLSX -->
+    <div>
+      <label for="importarXLSX">Importar Compras (XLSX): </label>
+      <input type="file" id="importarXLSX" accept=".xlsx" />
+    </div>
+
+    <!-- Tabela de Compras -->
     <table>
       <thead>
         <tr>
@@ -70,20 +79,9 @@
     </table>
   </main>
 
-  <!-- Modal Fornecedor -->
-  <div id="modalFornecedor" style="display:none; position:fixed; top:20%; left:50%; transform:translateX(-50%); background:#fff; padding:20px; box-shadow:0 0 10px rgba(0,0,0,0.3); border-radius:10px; z-index:999;">
-    <h3>Novo Fornecedor</h3>
-    <input type="text" id="novoFornecedor" placeholder="Nome" required><br><br>
-    <input type="text" id="novoTelefoneFornecedor" placeholder="Telefone"><br><br>
-    <button id="btnSalvarFornecedor">Salvar</button>
-    <button id="btnFecharModalFornecedor">Cancelar</button>
-  </div>
-
   <script type="module">
     import { carregarDoFirestore, salvarNoFirestore, atualizarNoFirestore, removerDoFirestore } from './script-firebase.js';
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
 
-    const auth = getAuth();  // Firebase Auth
     const form = document.getElementById("formCompras");
     const tabela = document.getElementById("tabelaCompras");
     const selectPagamento = document.getElementById("pagamento");
@@ -141,20 +139,11 @@
         compra.parcelasDetalhes = gerarParcelas(total, parcelas, data);
       }
 
-      const user = auth.currentUser;
-      if (!user) {
-        console.error("Usuário não autenticado");
-        return;
-      }
-
-      const userId = user.uid;
-      const caminho = `usuarios/${userId}/compras`;  // Acesso à coleção do usuário
-
       if (editandoId) {
-        await atualizarNoFirestore(caminho, editandoId, compra);
+        await atualizarNoFirestore("compras", editandoId, compra);
         editandoId = null;
       } else {
-        await salvarNoFirestore(caminho, compra);
+        await salvarNoFirestore("compras", compra);
       }
 
       form.reset();
@@ -164,17 +153,7 @@
 
     // Função para carregar as compras e exibir na tabela
     async function carregarCompras() {
-      const user = auth.currentUser;
-      if (!user) {
-        console.error("Usuário não autenticado.");
-        return;
-      }
-
-      const userId = user.uid;
-      const caminho = `usuarios/${userId}/compras`;  // Acesso à coleção do usuário
-
-      compras = await carregarDoFirestore(caminho);
-      console.log("Compras carregadas:", compras);  // Verifique no console se os dados estão corretos
+      compras = await carregarDoFirestore("compras");
       tabela.innerHTML = "";  // Limpa a tabela antes de adicionar novos dados
 
       compras.forEach((c) => {
@@ -214,29 +193,13 @@
 
     // Função para excluir uma compra
     window.excluirCompra = async (id) => {
-      const user = auth.currentUser;
-      if (!user) {
-        console.error("Usuário não autenticado.");
-        return;
-      }
-
-      const userId = user.uid;
-      const caminho = `usuarios/${userId}/compras`;  // Acesso à coleção do usuário
-      await removerDoFirestore(caminho, id);
+      await removerDoFirestore("compras", id);
       await carregarCompras();
     };
 
     // Função para carregar os fornecedores
     async function carregarFornecedores() {
-      const user = auth.currentUser;
-      if (!user) {
-        console.error("Usuário não autenticado.");
-        return;
-      }
-
-      const userId = user.uid;
-      const caminho = `usuarios/${userId}/fornecedores`;  // Acesso à coleção de fornecedores do usuário
-      fornecedores = await carregarDoFirestore(caminho);
+      fornecedores = await carregarDoFirestore("fornecedores");
       fornecedorSelect.innerHTML = '<option value="">Selecione um fornecedor</option>';
       fornecedores.forEach(f => {
         const opt = document.createElement("option");
@@ -246,42 +209,31 @@
       });
     }
 
-    // Funções para abrir e fechar o modal de fornecedor
-    function abrirModalFornecedor() {
-      document.getElementById("modalFornecedor").style.display = "block";
-    }
+    // Função para importar dados do arquivo XLSX
+    document.getElementById("importarXLSX").addEventListener("change", function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
 
-    function fecharModalFornecedor() {
-      document.getElementById("modalFornecedor").style.display = "none";
-      document.getElementById("novoFornecedor").value = "";
-      document.getElementById("novoTelefoneFornecedor").value = "";
-    }
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(sheet);
 
-    // Função para salvar um novo fornecedor
-    async function salvarNovoFornecedor() {
-      const nome = document.getElementById("novoFornecedor").value.trim();
-      const telefone = document.getElementById("novoTelefoneFornecedor").value.trim();
-      if (!nome) {
-        alert("Informe o nome do fornecedor.");
-        return;
-      }
-      const user = auth.currentUser;
-      if (!user) {
-        console.error("Usuário não autenticado.");
-        return;
-      }
-
-      const userId = user.uid;
-      const caminho = `usuarios/${userId}/fornecedores`;  // Acesso à coleção de fornecedores do usuário
-      await salvarNoFirestore(caminho, { nome, telefone });
-      await carregarFornecedores();
-      fecharModalFornecedor();
-    }
-
-    // Eventos dos botões
-    document.getElementById("btnAbrirModalFornecedor").addEventListener("click", abrirModalFornecedor);
-    document.getElementById("btnFecharModalFornecedor").addEventListener("click", fecharModalFornecedor);
-    document.getElementById("btnSalvarFornecedor").addEventListener("click", salvarNovoFornecedor);
+        // Preenche o formulário com os dados importados
+        rows.forEach(row => {
+          document.getElementById("produto").value = row.Produto || '';
+          document.getElementById("quantidade").value = row.Qtd || '';
+          document.getElementById("valor").value = row['Valor Unitário (R$)'] || '';
+          document.getElementById("pagamento").value = row.Pagamento || '';
+          document.getElementById("parcelas").value = row.Parcelas || '';
+          form.submit();  // Envia o formulário automaticamente
+        });
+      };
+      reader.readAsArrayBuffer(file);
+    });
 
     // Início
     await carregarFornecedores();
